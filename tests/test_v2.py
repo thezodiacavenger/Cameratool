@@ -65,8 +65,10 @@ class StoreTests(unittest.TestCase):
         self.assertTrue(self.s.verify(rid, rec["cert_code"].lower().replace("-", " "))["valid"])
         self.assertFalse(self.s.verify(rid, "AAAA-AAAA-AAAA")["valid"])
         self.assertFalse(self.s.verify("nope", rec["cert_code"])["valid"])
-        with sqlite3.connect(self.s.db_path) as c:
-            c.execute("UPDATE records SET shutter_count=100 WHERE id=?", (rid,))
+        c = sqlite3.connect(self.s.db_path)
+        c.execute("UPDATE records SET shutter_count=100 WHERE id=?", (rid,))
+        c.commit()
+        c.close()
         self.assertFalse(self.s.verify(rid, rec["cert_code"])["valid"])
 
     def test_update_rules(self):
