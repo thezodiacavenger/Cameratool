@@ -166,6 +166,10 @@ try:
         if not v.get("valid"):
             fail(f"certificate did not verify: {v}")
         note(f"record {rid} saved; report card, Word, Excel, CSV and backup exports OK; certificate {saved['cert_code']} verified")
+except Exception as ex:  # noqa: BLE001 - any crash of the script or the app must be reported
+    import traceback
+    fail(f"smoke script stopped: {ex!r} (app alive: {proc.poll() is None})%0A" +
+         traceback.format_exc().replace("\n", "%0A"))
 finally:
     if failures:
         try:
