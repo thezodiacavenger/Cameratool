@@ -12,6 +12,8 @@ from . import __publisher__, __version__
 from .analyzer import display_name, find_rating, load_ratings
 from .ooxml import Docx
 
+YEARS_CAP = 20  # other parts age long before this; "53 years" reads as implausible to customers
+
 GRADE_TEXT = {
     "A": "Very little shutter use - mechanically close to new.",
     "B": "Light use, with plenty of shutter life remaining.",
@@ -62,7 +64,9 @@ def build_card(rec, settings):
     if remaining is not None:
         for profile, per_year in settings.get("usage_profiles") or []:
             if per_year:
-                usage.append({"profile": profile, "per_year": per_year, "years": round(remaining / per_year, 1)})
+                years = round(remaining / per_year, 1)
+                usage.append({"profile": profile, "per_year": per_year, "years": years,
+                              "years_label": f"{YEARS_CAP}+" if years > YEARS_CAP else f"{years:g}"})
     src = rec.get("count_source") or ""
     flags = rec.get("flags") or []
     stale = any("days ago" in (f.get("msg") or "") for f in flags)
@@ -188,7 +192,7 @@ def card_html(c, toolbar=True):
     usage = ""
     if c["usage"]:
         usage = ("<h2>How long could it last?</h2><table><tr><th>If you shoot like a…</th><th>Per year</th><th>Approx. years left</th></tr>"
-                 + "".join(f'<tr><td>{e(u["profile"])}</td><td>{_fmt(u["per_year"])} frames</td><td><b>{u["years"]:g}</b> years</td></tr>'
+                 + "".join(f'<tr><td>{e(u["profile"])}</td><td>{_fmt(u["per_year"])} frames</td><td><b>{u["years_label"]}</b> years</td></tr>'
                            for u in c["usage"]) + "</table>")
     ver = "".join(f'<tr><td>{e(v["label"])}</td><td class="{"na" if v["na"] else "ok" if v["ok"] else "no"}">'
                   f'{"Not checked" if v["na"] else "✓ Verified" if v["ok"] else "✗ Not verified"}</td></tr>' for v in c["verifications"])
@@ -330,7 +334,7 @@ def card_docx(c, logo_path=None):
     if c["usage"]:
         d.heading("How long could it last?")
         d.table([["If you shoot like a…", "Frames per year", "Approx. years left"]] +
-                [[u["profile"], _fmt(u["per_year"]), f"{u['years']:g} years"] for u in c["usage"]],
+                [[u["profile"], _fmt(u["per_year"]), f"{u['years_label']} years"] for u in c["usage"]],
                 widths=[3600, 3240, 3240], header=True)
     d.heading("Verification")
     d.table([[v["label"], ("Not checked", {"color": "6B7280"}) if v["na"] else

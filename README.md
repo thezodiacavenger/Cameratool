@@ -1,4 +1,4 @@
-# Camera Check: Used Camera Intake, Verification & Report Cards (v2.0)
+# Camera Check: Used Camera Intake, Verification & Report Cards (v2.0.1)
 
 *Created by Emmet Adriaans for Vistek Ltd.*
 
@@ -11,6 +11,10 @@ count, serial number and cinema runtime **over USB or from the memory card**. It
 - issues the customer a **tamper-evident report card**
 
 Everything runs locally on the store PC, and no customer data leaves the machine.
+
+| Evaluation screen | Customer report card |
+|---|---|
+| ![Evaluation screen](docs/screenshots/evaluate.png) | ![Customer report card](docs/screenshots/report-card.png) |
 
 ---
 

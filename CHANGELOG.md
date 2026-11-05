@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.0.1
+- Report card: estimates of more than 20 years now show as "20+ years". Other parts of a camera age long before then, so larger figures look implausible to customers.
+- Added screenshots of the report card and evaluation screen under `docs/screenshots/`.
+
 ## 2.0.0
 
 Created by Emmet Adriaans for Vistek Ltd.

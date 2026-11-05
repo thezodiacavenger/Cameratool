@@ -125,7 +125,14 @@ class ExportTests(unittest.TestCase):
             rec = s.get(s.save(REC))
             card = reportcard.build_card(rec, s.settings())
             self.assertEqual((card["remaining"], card["left_pct"], card["letter"]), (158994, 79.5, "B"))
-            self.assertEqual(card["usage"][1], {"profile": "Enthusiast", "per_year": 10000, "years": 15.9})
+            self.assertEqual(card["usage"][1], {"profile": "Enthusiast", "per_year": 10000, "years": 15.9,
+                                                "years_label": "15.9"})
+            self.assertEqual(card["usage"][0]["years_label"], "20+")  # Casual: 53 years -> capped
+            page = reportcard.card_html(card)
+            self.assertIn("<b>20+</b> years", page)
+            self.assertNotIn("<b>53</b>", page)
+            docxml = zipfile.ZipFile(io.BytesIO(reportcard.card_docx(card))).read("word/document.xml").decode()
+            self.assertIn("20+ years", docxml)
             self.assertEqual(card["name"], "Nikon Z 6II")
             self.assertIn("Nikon Z 6II · s/n 6012345", reportcard.card_html(card))
             self.assertTrue(card["verifications"][0]["ok"])
