@@ -12,6 +12,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 
@@ -72,7 +73,10 @@ try:
     cards = get("/api/cards")
     note(f"card detection OK - {len(cards)} volume(s): {[c['path'] for c in cards]}")
 
-    usb = post("/api/usb", b"{}")
+    try:
+        usb = post("/api/usb", b"{}")
+    except urllib.error.HTTPError as ex:
+        usb = {"http_error": ex.code, "body": ex.read().decode("utf-8", "replace")[:800]}
     if usb.get("ok") or "No USB camera" in (usb.get("error") or ""):
         note(f"USB WPD enumeration ran OK: {usb.get('error') or usb.get('model')}")
     else:
@@ -84,9 +88,13 @@ try:
             path = os.path.join(SAMPLES, name)
             if not os.path.isfile(path):
                 continue
-            with open(path, "rb") as fh:
-                up = post("/api/upload", fh.read(), {"X-Filename": urllib.parse.quote(name)})
-            res = post("/api/analyze", json.dumps({"evidence": [up]}).encode())["results"][0]
+            try:
+                with open(path, "rb") as fh:
+                    up = post("/api/upload", fh.read(), {"X-Filename": urllib.parse.quote(name)})
+                res = post("/api/analyze", json.dumps({"evidence": [up]}).encode())["results"][0]
+            except urllib.error.HTTPError as ex:
+                fail(f"{name}: HTTP {ex.code} {ex.read().decode('utf-8', 'replace')[:500]}")
+                continue
             if res.get("error"):
                 fail(f"{name}: {res['error']}")
                 continue
