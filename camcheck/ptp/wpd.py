@@ -87,19 +87,19 @@ def list_devices():
     except Exception:  # noqa: BLE001
         pass
     count = c_ulong(0)
-    mgr.GetDevices(POINTER(c_wchar_p)(), byref(count))
+    mgr.GetDevices(POINTER(c_wchar_p)(), ctypes.pointer(count))
     if not count.value:
         return []
     ids = (c_wchar_p * count.value)()
-    mgr.GetDevices(cast(ids, POINTER(c_wchar_p)), byref(count))
+    mgr.GetDevices(cast(ids, POINTER(c_wchar_p)), ctypes.pointer(count))
     out = []
     for pnp in ids[:count.value]:
         name = pnp
         try:
             n = c_ulong(0)
-            mgr.GetDeviceFriendlyName(pnp, POINTER(ctypes.c_ushort)(), byref(n))
+            mgr.GetDeviceFriendlyName(pnp, POINTER(ctypes.c_ushort)(), ctypes.pointer(n))
             buf = ctypes.create_unicode_buffer(n.value + 1)
-            mgr.GetDeviceFriendlyName(pnp, cast(buf, POINTER(ctypes.c_ushort)), byref(n))
+            mgr.GetDeviceFriendlyName(pnp, cast(buf, POINTER(ctypes.c_ushort)), ctypes.pointer(n))
             name = buf.value or pnp
         except Exception:  # noqa: BLE001
             pass
@@ -164,7 +164,7 @@ class WPDTransport:
             n = coll.GetCount()
             for i in range(n):
                 pv = self.types.tag_inner_PROPVARIANT()
-                coll.GetAt(i, byref(pv))
+                coll.GetAt(i, ctypes.pointer(pv))
                 params.append(_pv_read_u4(pv))
         except Exception:  # noqa: BLE001
             pass
