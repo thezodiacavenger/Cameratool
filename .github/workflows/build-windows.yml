@@ -10,7 +10,31 @@ permissions:
   contents: write   # needed to attach the exe to a GitHub Release on version tags
 
 jobs:
+  usb-stress:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-2022, windows-2025]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install comtypes
+      - name: Stress the USB path (native crashes are dumped)
+        shell: pwsh
+        run: |
+          python tools/usb_stress.py
+          $code = $LASTEXITCODE
+          if ($code -ne 0) {
+            $log = (Get-Content usb_stress.log -Raw) -replace "%", "%25" -replace "`r", "" -replace "`n", "%0A"
+            Write-Host "::error title=usb stress crash (exit $code)::$log"
+            exit 1
+          }
+
   build:
+    needs: usb-stress
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4

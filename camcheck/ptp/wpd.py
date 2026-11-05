@@ -228,7 +228,10 @@ class WPDTransport:
     def __init__(self, pnp_id):
         comtypes, cc, api, types = _load()
         self.comtypes, self.cc, self.api, self.types = comtypes, cc, api, types
-        self.dev = _new(cc, comtypes, api.PortableDevice, api.IPortableDevice)
+        # The free-threaded variant is Microsoft's recommendation for multithreaded callers;
+        # it avoids cross-apartment proxies that outlive the request thread.
+        coclass = getattr(api, "PortableDeviceFTM", None) or api.PortableDevice
+        self.dev = _new(cc, comtypes, coclass, api.IPortableDevice)
         client = self._values()
         kv(client, "SetStringValue", CLIENT, 2, "Camera Check")
         kv(client, "SetUnsignedIntegerValue", CLIENT, 3, 1)
@@ -242,6 +245,7 @@ class WPDTransport:
             self.dev.Close()
         except Exception:  # noqa: BLE001
             pass
+        self.dev = None
 
     # helpers ---------------------------------------------------------------
     def _values(self):

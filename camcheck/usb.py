@@ -86,11 +86,15 @@ def _read_wpd(save_bytes, want_image=True):
             finally:
                 if t:
                     t.close()
+                t = s = None
         result["error"] = ("No USB camera found. Connect the camera with a data cable, switch it on and set its USB "
                            "mode to PTP / MTP / 'PC Remote' / 'Tether'. Other portable devices seen: " + "; ".join(tried))
         return result
     finally:
-        pass
+        # Release every COM object created for this request on this (COM-initialised) thread,
+        # including ones only reachable through exception tracebacks, before the thread ends.
+        import gc
+        gc.collect()
 
 
 def _session_readout(s, result, save_bytes, want_image):
