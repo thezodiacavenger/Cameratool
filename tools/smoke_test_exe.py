@@ -90,6 +90,7 @@ try:
 
     if SAMPLES:
         brands = {}
+        lines = []
         for name in SAMPLE_FILES:
             path = os.path.join(SAMPLES, name)
             if not os.path.isfile(path):
@@ -106,10 +107,11 @@ try:
                 continue
             brands[name] = res["brand"]
             counters = ", ".join(f"{c['label']}={c['value']}" for c in res["counters"]) or "none"
-            note(f"{name}: brand={res['brand']} model={res['model']} serial={res['serial']} "
+            lines.append(f"{name}: brand={res['brand']} model={res['model']} serial={res['serial']} "
                  f"counters=[{counters}] grade={res['grade']}")
             if res["brand"] in ("Unknown", "", None) and name not in ("MXF.mxf",):
                 fail(f"{name}: brand not recognised")
+        note("decoded samples%0A" + "%0A".join(lines))
         if brands.get("Nikon.jpg") != "Nikon":
             fail(f"Nikon sample not identified as Nikon (got {brands.get('Nikon.jpg')})")
 finally:

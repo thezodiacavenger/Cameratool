@@ -70,6 +70,10 @@ class T(unittest.TestCase):
         self.assertNotIn("fail", levels(r))
         self.assertIn("runtime", r["guide"]["menu"])
 
+    def test_filetype_brand_and_serial_cleanup(self):
+        self.assertEqual(A("red_nomodel")["brand"], "RED")
+        self.assertEqual(A("nikon_old_serial")["serial"], "20025585")
+
     def test_cross_check(self):
         a, b = A("nikon_z6ii"), dict(A("nikon_z6ii"))
         b["serial"] = "999"

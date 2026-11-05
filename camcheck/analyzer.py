@@ -247,8 +247,11 @@ def analyze(raw, ratings=None, now=None, display_name=None):
     tags = Tags(raw)
     make = tags.first("Make") or ""
     model = str(tags.first("Model", "CameraModelName", "UniqueCameraModel") or "").strip()
-    brand = normalize_brand(make, model)
     file_type = tags.first("FileType") or ""
+    brand = normalize_brand(make, model)
+    if brand == "Unknown":
+        brand = {"R3D": "RED", "BRAW": "Blackmagic Design", "ARI": "ARRI", "ARX": "ARRI"}.get(
+            str(file_type).upper(), brand)
 
     serial = tags.first("SerialNumber", "BodySerialNumber", "CameraSerialNumber",
                         groups=None)
@@ -321,7 +324,7 @@ def analyze(raw, ratings=None, now=None, display_name=None):
         "brand": brand,
         "make": make,
         "model": model,
-        "serial": str(serial) if serial is not None else None,
+        "serial": re.sub(r"^\s*NO=\s*", "", str(serial)).strip() if serial is not None else None,
         "internal_serial": str(internal) if internal is not None else None,
         "lens": str(lens) if lens is not None else None,
         "lens_serial": str(lens_serial) if lens_serial is not None else None,
