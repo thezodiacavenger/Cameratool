@@ -20,61 +20,54 @@ class WPDMarshalling(unittest.TestCase):
         return self.wpd._new(self.cc, self.comtypes, self.types.PortableDeviceValues,
                              self.types.IPortableDeviceValues)
 
-    def k(self, pid):
-        return self.wpd._key(self.types, self.wpd.MTP_EXT, pid)
-
     def test_scalar_roundtrip(self):
         v = self.values()
-        v.SetUnsignedIntegerValue(self.k(1001), 0x1015)
-        self.assertEqual(v.GetUnsignedIntegerValue(self.k(1001)), 0x1015)
-        v.SetStringValue(self.k(1006), "ctx-123")
-        self.assertEqual(v.GetStringValue(self.k(1006)), "ctx-123")
+        self.wpd.kv(v, "SetUnsignedIntegerValue", self.wpd.MTP_EXT, 1001, 0x1015)
+        self.assertEqual(self.wpd.kv(v, "GetUnsignedIntegerValue", self.wpd.MTP_EXT, 1001), 0x1015)
+        self.wpd.kv(v, "SetStringValue", self.wpd.MTP_EXT, 1006, "ctx-123")
+        self.assertEqual(self.wpd.kv(v, "GetStringValue", self.wpd.MTP_EXT, 1006), "ctx-123")
         from comtypes import GUID
-        v.SetGuidValue(self.wpd._key(self.types, self.wpd.COMMON, 1001), GUID(self.wpd.MTP_EXT))
+        self.wpd.kv(v, "SetGuidValue", self.wpd.COMMON, 1001, GUID(self.wpd.MTP_EXT))
 
     def test_param_collection(self):
         coll = self.wpd._new(self.cc, self.comtypes, self.types.PortableDevicePropVariantCollection,
                              self.types.IPortableDevicePropVariantCollection)
         for x in (0xD1AC, 0xFFFFFFFF, 0):
-            coll.Add(self.wpd._pv_u4(self.types, x))
+            self.wpd.pv_add_u4(coll, x)
         self.assertEqual(self.wpd.coll_count(coll), 3)
         v = self.values()
-        v.SetIPortableDevicePropVariantCollectionValue(self.k(1002), coll)
-        back = v.GetIPortableDevicePropVariantCollectionValue(self.k(1002))
-        out = []
-        for i in range(self.wpd.coll_count(back)):
-            pv = self.types.tag_inner_PROPVARIANT()
-            back.GetAt(i, ctypes.pointer(pv))
-            out.append(self.wpd._pv_read_u4(pv))
+        self.wpd.kv(v, "SetIPortableDevicePropVariantCollectionValue", self.wpd.MTP_EXT, 1002, coll)
+        back = self.wpd.kv(v, "GetIPortableDevicePropVariantCollectionValue", self.wpd.MTP_EXT, 1002)
+        out = [self.wpd.pv_get_u4(back, i) for i in range(self.wpd.coll_count(back))]
         self.assertEqual(out, [0xD1AC, 0xFFFFFFFF, 0])
 
     def test_buffer_roundtrip(self):
         v = self.values()
         data = bytes(range(256)) * 4
         buf = (ctypes.c_ubyte * len(data)).from_buffer_copy(data)
-        v.SetBufferValue(self.k(1012), ctypes.cast(buf, ctypes.POINTER(ctypes.c_ubyte)), len(data))
-        ptr, n = v.GetBufferValue(self.k(1012))
+        self.wpd.kv(v, "SetBufferValue", self.wpd.MTP_EXT, 1012, ctypes.cast(buf, ctypes.POINTER(ctypes.c_ubyte)), len(data))
+        ptr, n = self.wpd.kv(v, "GetBufferValue", self.wpd.MTP_EXT, 1012)
         self.assertEqual(ctypes.string_at(ptr, n), data)
 
     def test_cross_library_keys(self):
-        """Objects typed by the *API* library must get API-library keys (the bug a real device hit)."""
-        api_values = getattr(self.api, "IPortableDeviceValues", None)
-        if api_values is None:
-            self.skipTest("API type library does not declare IPortableDeviceValues")
-        v = self.wpd._new(self.cc, self.comtypes, self.types.PortableDeviceValues, api_values)
-        k = self.wpd._key(self.types, self.wpd.MTP_EXT, 1001, v, "SetUnsignedIntegerValue")
-        v.SetUnsignedIntegerValue(k, 7)
-        k2 = self.wpd._key(self.types, self.wpd.MTP_EXT, 1001, v, "GetUnsignedIntegerValue")
-        self.assertEqual(v.GetUnsignedIntegerValue(k2), 7)
-        k3 = self.wpd._key(self.types, self.wpd.CLIENT, 2, v, "SetStringValue")
-        v.SetStringValue(k3, "Camera Check")
-        api_coll = getattr(self.api, "IPortableDevicePropVariantCollection", None)
-        if api_coll is not None:
-            c = self.wpd._new(self.cc, self.comtypes, self.types.PortableDevicePropVariantCollection, api_coll)
-            c.Add(self.wpd._pv_u4(self.types, 42, c))
-            pv = self.wpd._pv_new(self.types, c, "GetAt", 1)
-            c.GetAt(0, ctypes.pointer(pv))
-            self.assertEqual(self.wpd._pv_read_u4(pv), 42)
+        """Objects typed by either type library must accept our keys (the bug a real device hit)."""
+        for lib in (self.types, self.api):
+            iface = getattr(lib, "IPortableDeviceValues", None)
+            if iface is None:
+                continue
+            v = self.wpd._new(self.cc, self.comtypes, self.types.PortableDeviceValues, iface)
+            self.wpd.kv(v, "SetUnsignedIntegerValue", self.wpd.MTP_EXT, 1001, 7)
+            self.assertEqual(self.wpd.kv(v, "GetUnsignedIntegerValue", self.wpd.MTP_EXT, 1001), 7)
+            self.wpd.kv(v, "SetStringValue", self.wpd.CLIENT, 2, "Camera Check")
+            self.assertEqual(self.wpd.kv(v, "GetStringValue", self.wpd.CLIENT, 2), "Camera Check")
+        for lib in (self.types, self.api):
+            iface = getattr(lib, "IPortableDevicePropVariantCollection", None)
+            if iface is None:
+                continue
+            c = self.wpd._new(self.cc, self.comtypes, self.types.PortableDevicePropVariantCollection, iface)
+            self.wpd.pv_add_u4(c, 42)
+            self.wpd.pv_add_u4(c, 0xFFFFFFFF)
+            self.assertEqual([self.wpd.pv_get_u4(c, i) for i in range(self.wpd.coll_count(c))], [42, 0xFFFFFFFF])
 
     def test_transport_opens_any_device(self):
         """If the machine has any WPD device, opening it must not raise a ctypes TypeError."""
