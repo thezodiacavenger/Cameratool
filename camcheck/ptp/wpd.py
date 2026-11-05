@@ -46,10 +46,7 @@ def _load():
         sys.coinit_flags = 0  # COINIT_MULTITHREADED: requests run on worker threads
     import comtypes
     import comtypes.client
-    if getattr(sys, "frozen", False):
-        gen = os.path.join(os.environ.get("APPDATA", "."), "CameraCheck", "comtypes_gen")
-        os.makedirs(gen, exist_ok=True)
-        comtypes.client.gen_dir = gen
+    # the .exe build ships pre-generated wrappers in comtypes.gen
     api = comtypes.client.GetModule("portabledeviceapi.dll")
     types = comtypes.client.GetModule("portabledevicetypes.dll")
     _mods = (comtypes, comtypes.client, api, types)

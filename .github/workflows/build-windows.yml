@@ -1,0 +1,88 @@
+name: Build Windows exe
+
+on:
+  push:
+    branches: ["**"]
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write   # needed to attach the exe to a GitHub Release on version tags
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install build tools
+        run: python -m pip install --upgrade pip pyinstaller comtypes
+
+      - name: Unit tests
+        run: python -m unittest discover -s tests -v
+
+      - name: Pre-generate Windows Portable Devices wrappers
+        run: python -c "import comtypes.client as c; c.GetModule('portabledeviceapi.dll'); c.GetModule('portabledevicetypes.dll'); import comtypes.gen.PortableDeviceApiLib, comtypes.gen.PortableDeviceTypesLib; print('WPD wrappers OK')"
+
+      - name: Build CameraCheck.exe
+        run: >
+          pyinstaller --noconfirm --name CameraCheck --console
+          --collect-submodules comtypes
+          --add-data "camcheck/web;camcheck/web"
+          --add-data "camcheck/data;camcheck/data"
+          CameraCheck.py
+
+      - name: Bundle ExifTool (exiftool.org, Phil Harvey)
+        shell: pwsh
+        run: |
+          $ver = (Invoke-WebRequest -UseBasicParsing "https://exiftool.org/ver.txt").Content.Trim()
+          Write-Host "ExifTool $ver"
+          Invoke-WebRequest -UseBasicParsing -UserAgent "Wget" "https://sourceforge.net/projects/exiftool/files/exiftool-${ver}_64.zip/download" -OutFile et.zip
+          Expand-Archive et.zip et -Force
+          $inner = Get-ChildItem et -Directory | Select-Object -First 1
+          $dest = "dist/CameraCheck/tools/exiftool"
+          New-Item -ItemType Directory -Force $dest | Out-Null
+          Copy-Item (Join-Path $inner.FullName "*") $dest -Recurse -Force
+          Rename-Item (Join-Path $dest "exiftool(-k).exe") "exiftool.exe"
+          & "$dest/exiftool.exe" -ver
+          # sample camera files from the ExifTool test suite, for the smoke test only
+          Invoke-WebRequest -UseBasicParsing -UserAgent "Wget" "https://sourceforge.net/projects/exiftool/files/Image-ExifTool-$ver.tar.gz/download" -OutFile et.tgz
+          tar -xzf et.tgz
+          Move-Item "Image-ExifTool-$ver/t/images" samples
+
+      - name: Add launcher notes
+        shell: pwsh
+        run: |
+          Copy-Item README.md dist/CameraCheck/README.md
+          @"
+          Camera Check - Windows
+          ======================
+          Double-click CameraCheck.exe. No Python or other installs needed.
+          Keep this whole folder together (the exe needs the _internal and tools folders).
+          Records are stored in %APPDATA%\CameraCheck.
+          "@ | Out-File -Encoding utf8 dist/CameraCheck/START-HERE.txt
+
+      - name: Smoke test the exe
+        run: python tools/smoke_test_exe.py dist/CameraCheck/CameraCheck.exe samples
+
+      - name: Zip
+        shell: pwsh
+        run: Compress-Archive -Path dist/CameraCheck -DestinationPath CameraCheck-Windows.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: CameraCheck-Windows
+          path: CameraCheck-Windows.zip
+
+      - name: Publish release (version tags only)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: CameraCheck-Windows.zip
+          body: |
+            **Download `CameraCheck-Windows.zip`**, unzip it anywhere (e.g. Desktop), and double-click `CameraCheck.exe`.
+            No Python or other software needed - ExifTool and USB camera support are built in.
