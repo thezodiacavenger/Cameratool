@@ -35,7 +35,9 @@ jobs:
 
   build:
     needs: usb-stress
-    runs-on: windows-latest
+    # windows-2022 images expose a virtual portable device, so the smoke test exercises the
+    # real device-open path of the USB code on every build. The exe runs on Windows 10/11.
+    runs-on: windows-2022
     steps:
       - uses: actions/checkout@v4
 
