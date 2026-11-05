@@ -5,7 +5,7 @@ import unittest
 
 root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root)
-suite = unittest.defaultTestLoader.discover(os.path.join(root, "tests"), top_level_dir=root)
+suite = unittest.defaultTestLoader.discover(os.path.join(root, "tests"))
 result = unittest.TextTestRunner(verbosity=2).run(suite)
 for test, tb in result.failures + result.errors:
     msg = tb.strip().replace("%", "%25").replace("\r", "").replace("\n", "%0A")[-3000:]
