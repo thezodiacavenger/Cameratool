@@ -37,12 +37,12 @@ class WPDMarshalling(unittest.TestCase):
                              self.types.IPortableDevicePropVariantCollection)
         for x in (0xD1AC, 0xFFFFFFFF, 0):
             coll.Add(self.wpd._pv_u4(self.types, x))
-        self.assertEqual(coll.GetCount(), 3)
+        self.assertEqual(self.wpd.coll_count(coll), 3)
         v = self.values()
         v.SetIPortableDevicePropVariantCollectionValue(self.k(1002), coll)
         back = v.GetIPortableDevicePropVariantCollectionValue(self.k(1002))
         out = []
-        for i in range(back.GetCount()):
+        for i in range(self.wpd.coll_count(back)):
             pv = self.types.tag_inner_PROPVARIANT()
             back.GetAt(i, ctypes.pointer(pv))
             out.append(self.wpd._pv_read_u4(pv))

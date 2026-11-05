@@ -78,6 +78,17 @@ def _pv_read_u4(pv):
     return ctypes.c_uint32.from_address(ctypes.addressof(pv) + 8).value
 
 
+def coll_count(coll):
+    """IPortableDevicePropVariantCollection::GetCount - the typelib declares the
+    count as an [in] pointer, so comtypes needs one passed explicitly."""
+    n = c_ulong(0)
+    try:
+        coll.GetCount(ctypes.pointer(n))
+        return n.value
+    except TypeError:
+        return coll.GetCount()
+
+
 def list_devices():
     """Return [(pnp_id, friendly_name)] for every WPD device (cameras, phones, players)."""
     comtypes, cc, api, types = _load()
@@ -161,7 +172,7 @@ class WPDTransport:
         params = []
         try:
             coll = res.GetIPortableDevicePropVariantCollectionValue(self._k(MTP_EXT, P_RESP_PARAMS))
-            n = coll.GetCount()
+            n = coll_count(coll)
             for i in range(n):
                 pv = self.types.tag_inner_PROPVARIANT()
                 coll.GetAt(i, ctypes.pointer(pv))
