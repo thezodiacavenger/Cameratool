@@ -54,12 +54,12 @@ def backend():
 def _read_wpd(save_bytes, want_image=True):
     from .ptp import wpd
     comtypes = wpd._load()[0]
-    inited = False
     try:
         comtypes.CoInitializeEx(0)  # COINIT_MULTITHREADED; this request runs on its own thread
-        inited = True
     except OSError:
         pass  # already initialised on this thread
+    # COM is deliberately never uninitialised here: Python releases the device objects only after
+    # this function's frame is gone, and releasing them after CoUninitialize crashes natively.
     try:
         devices = wpd.list_devices()
         result = {"ok": False, "transport": "Windows WPD", "devices": [n for _, n in devices], "log": []}
@@ -89,11 +89,7 @@ def _read_wpd(save_bytes, want_image=True):
         result["error"] = "Could not talk to the connected device(s): " + "; ".join(tried)
         return result
     finally:
-        if inited:
-            try:
-                comtypes.CoUninitialize()
-            except Exception:  # noqa: BLE001
-                pass
+        pass
 
 
 def _session_readout(s, result, save_bytes, want_image):

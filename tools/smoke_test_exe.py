@@ -94,6 +94,16 @@ try:
     cards = get("/api/cards")
     note(f"card detection OK - {len(cards)} volume(s): {[c['path'] for c in cards]}")
 
+    # hammer the USB path - native COM bugs tend to be intermittent
+    for i in range(6):
+        try:
+            u = post("/api/usb", b"{}")
+            if not (u.get("ok") or "No USB camera" in (u.get("error") or "")):
+                fail(f"USB call {i}: {u}")
+        except Exception as ex:  # noqa: BLE001
+            fail(f"USB call {i} crashed: {ex!r}")
+            break
+        time.sleep(0.3)
     t0 = time.time()
     try:
         usb = post("/api/usb", b"{}")
