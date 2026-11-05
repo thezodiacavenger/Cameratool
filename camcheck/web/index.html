@@ -3,167 +3,298 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="cc-token" content="{{TOKEN}}">
 <title>Camera Check</title>
+<link rel="icon" href="/static/icon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-<header>
-  <div class="brand"><span class="logo">◉</span> Camera Check <small id="ver"></small></div>
-  <nav>
-    <button data-tab="evaluate" class="active">Evaluate</button>
-    <button data-tab="records">Records</button>
-    <button data-tab="guide">Brand guide</button>
-    <button data-tab="ratings">Shutter ratings</button>
-    <button data-tab="setup">Setup</button>
-  </nav>
-</header>
-<div id="banner" class="banner hidden"></div>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="14" r="4"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5"/></symbol>
+  <symbol id="i-gauge" viewBox="0 0 24 24"><path d="M4 18a8 8 0 1 1 16 0"/><path d="M12 18l4-6"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5h.01"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a1 1 0 0 1 1-1h10"/></symbol>
+  <symbol id="i-usb" viewBox="0 0 24 24"><path d="M12 3v14M8 7l4-4 4 4M7 12v2l5 3 5-3v-3"/><circle cx="12" cy="19.5" r="1.5"/></symbol>
+  <symbol id="i-card" viewBox="0 0 24 24"><path d="M7 3h8l4 4v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M10 7v3M13 7v3M16 8v2"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5"/></symbol>
+  <symbol id="i-doc" viewBox="0 0 24 24"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M8 13h8M8 17h6"/></symbol>
+  <symbol id="i-sheet" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="1"/><path d="M4 10h16M4 15h16M10 4v16"/></symbol>
+  <symbol id="i-print" viewBox="0 0 24 24"><path d="M7 9V3h10v6M7 17H5a1 1 0 0 1-1-1v-5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v5a1 1 0 0 1-1 1h-2"/><rect x="7" y="14" width="10" height="7"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18h.01"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></symbol>
+  <symbol id="i-save" viewBox="0 0 24 24"><path d="M5 3h11l3 3v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M8 3v5h7M8 21v-7h8v7"/></symbol>
+  <symbol id="i-award" viewBox="0 0 24 24"><circle cx="12" cy="9" r="6"/><path d="M8.5 14l-1.5 7 5-3 5 3-1.5-7"/></symbol>
+</svg>
 
-<main>
-<!-- ============================ EVALUATE ============================ -->
-<section id="tab-evaluate" class="tab active">
-  <div class="grid2">
-    <div class="card">
-      <h2><span class="step">1</span> Intake</h2>
-      <div class="form">
-        <label>Staff<input id="f-staff" placeholder="Your name"></label>
-        <label>PO / trade-in #<input id="f-reference"></label>
-        <label>Seller / customer<input id="f-seller"></label>
-        <label>Serial on body label<input id="f-label" placeholder="Read from the camera body"></label>
-        <label>Brand (if no file)<select id="f-brand"></select></label>
-        <label>Model (if no file)<input id="f-model"></label>
-      </div>
+<div class="app">
+  <aside class="side">
+    <div class="brand"><img src="/static/icon.svg" alt=""><div><b>Camera Check</b><small id="storeName">Vistek</small></div></div>
+    <nav>
+      <button data-tab="evaluate" class="active"><svg><use href="#i-camera"/></svg>Evaluate</button>
+      <button data-tab="records"><svg><use href="#i-list"/></svg>Records</button>
+      <button data-tab="verify"><svg><use href="#i-shield"/></svg>Verify report</button>
+      <button data-tab="guide"><svg><use href="#i-book"/></svg>Brand guide</button>
+      <button data-tab="ratings"><svg><use href="#i-gauge"/></svg>Shutter ratings</button>
+      <button data-tab="settings"><svg><use href="#i-gear"/></svg>Settings</button>
+      <button data-tab="about"><svg><use href="#i-info"/></svg>About</button>
+    </nav>
+    <div class="side-foot">
+      <div><span class="dot" id="dotExif"></span>ExifTool <span id="exifVer"></span></div>
+      <div><span class="dot" id="dotUsb"></span>USB <span id="usbName"></span></div>
+      <div class="ver">v{{VERSION}}</div>
     </div>
+  </aside>
 
-    <div class="card">
-      <h2><span class="step">2</span> Read the camera</h2>
-      <p class="hint">Take <b>one fresh photo now</b> (mechanical shutter, no editing), then read it by USB <i>or</i> from the card.</p>
-      <div class="sub">
-        <h3>USB cable <small id="usbBackend"></small></h3>
-        <div class="row" style="margin-top:4px">
-          <button id="usbBtn" class="primary">Read camera over USB</button>
-          <span id="usbHint" class="hint"></span>
-        </div>
-        <details><summary>USB mode per brand</summary>
-          <ul class="tight">
-            <li><b>Nikon</b> - USB: MTP/PTP. Reads serial + newest photo's shutter count.</li>
-            <li><b>Canon</b> - default (no Wi-Fi active). Live shutter counter on EOS bodies that expose it, plus newest photo.</li>
-            <li><b>Sony</b> - USB Connection: <i>MTP</i> (or PC Remote). Newest photo is decoded. <i>Mass Storage</i> makes it appear as a card instead.</li>
-            <li><b>Fujifilm</b> - Connection Setting: <i>USB tether / PC auto</i> for the live TotalShotCount; <i>USB card reader</i> mode appears as a card.</li>
-            <li><b>OM System / Olympus</b> - choose <i>MTP</i> or <i>PC (tether)</i> on the USB prompt; <i>Storage</i> appears as a card.</li>
-            <li><b>Panasonic / Leica</b> - <i>PC (Storage)</i> appears as a card; <i>PC (Tether)</i>/PTP for serial.</li>
-            <li>Close Windows Photos / Lightroom import / EOS Utility first - only one program can talk to a camera.</li>
-          </ul>
-        </details>
+  <main>
+    <div id="banner" class="banner hidden"></div>
+
+    <!-- =============================== EVALUATE =============================== -->
+    <section id="tab-evaluate" class="tab active">
+      <div class="pagehead">
+        <div><h1>New evaluation</h1><p>Read a camera, confirm its identity, grade its condition and issue a report card.</p></div>
+        <div class="actions"><button id="resetBtn" class="ghost">Start over</button></div>
       </div>
-      <div class="sub">
-        <h3>Card reader <small>SD · microSD · CFexpress A/B · CFast · XQD</small>
-          <label class="inline right"><input type="checkbox" id="autoScan" checked> auto-scan new cards</label></h3>
-        <div id="cards" class="cards"><span class="hint">Looking for cards…</span></div>
-        <div id="drop" class="drop small" tabindex="0">
-          <div><b>…or drop files here</b> / click to browse</div>
-          <input id="file" type="file" multiple hidden>
+
+      <div class="grid2">
+        <div class="card">
+          <h2><span class="step">1</span>Intake</h2>
+          <div class="form">
+            <label>Staff<input id="f-staff" autocomplete="off"></label>
+            <label>PO / trade-in #<input id="f-reference" autocomplete="off"></label>
+            <label>Seller / customer<input id="f-seller" autocomplete="off"></label>
+            <label>Status<select id="f-status"></select></label>
+            <label class="span2 hl"><span class="lt">Serial on the body label <small>(type it before reading - every result is checked against it)</small></span><input id="f-label" autocomplete="off" placeholder="e.g. 6012345"></label>
+            <label><span class="lt">Brand <small>(if no file)</small></span><select id="f-brand"></select></label>
+            <label><span class="lt">Model <small>(if no file)</small></span><input id="f-model" autocomplete="off"></label>
+          </div>
         </div>
+
+        <div class="card">
+          <h2><span class="step">2</span>Read the camera</h2>
+          <p class="hint">Shoot <b>one fresh frame</b> on the store's card first (mechanical shutter, no edits).</p>
+          <div class="segs" role="tablist">
+            <button class="seg active" data-src="card"><svg><use href="#i-card"/></svg>Card reader</button>
+            <button class="seg" data-src="usb"><svg><use href="#i-usb"/></svg>USB cable</button>
+            <button class="seg" data-src="files"><svg><use href="#i-file"/></svg>Files</button>
+          </div>
+          <div class="srcpane" id="src-card">
+            <div class="row between"><small class="muted">SD · microSD · CFexpress A/B · CFast · XQD</small>
+              <label class="inline"><input type="checkbox" id="autoScan" checked> Auto-scan new cards</label></div>
+            <div id="cards" class="cards"><div class="empty sm">Looking for cards…</div></div>
+            <div class="row"><input id="scanPath" placeholder="…or a folder path, e.g. E:\DCIM"><button id="scanBtn" class="secondary">Scan folder</button></div>
+          </div>
+          <div class="srcpane hidden" id="src-usb">
+            <div class="usbbox">
+              <button id="usbBtn" class="primary big"><svg><use href="#i-usb"/></svg>Read camera over USB</button>
+              <div id="usbHint" class="hint"></div>
+            </div>
+            <details><summary>USB mode per brand</summary>
+              <ul class="tight">
+                <li><b>Nikon</b> - MTP/PTP. Reads serial + newest photo's shutter count.</li>
+                <li><b>Canon</b> - default mode. Live counter on EOS bodies that expose it, plus newest photo.</li>
+                <li><b>Sony</b> - USB Connection: MTP or PC Remote. Mass Storage appears as a card instead.</li>
+                <li><b>Fujifilm</b> - USB tether / PC auto for the live TotalShotCount.</li>
+                <li><b>OM System</b> - MTP or tether on the USB prompt.</li>
+                <li><b>Panasonic / Leica</b> - PTP/tether for serial; PC (Storage) appears as a card.</li>
+                <li>Close Windows Photos, Lightroom import or EOS Utility first.</li>
+              </ul>
+            </details>
+          </div>
+          <div class="srcpane hidden" id="src-files">
+            <div id="drop" class="drop" tabindex="0" role="button">
+              <svg><use href="#i-file"/></svg>
+              <div><b>Drop image or clip files</b> or click to browse</div>
+              <small>JPEG · NEF · CR2/CR3 · ARW · RAF · ORF · RW2 · PEF · DNG · R3D · MXF · MOV/MP4</small>
+              <input id="file" type="file" multiple hidden>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="results"></div>
+      <div id="guideBox"></div>
+
+      <div class="grid2">
+        <div class="card">
+          <h2><span class="step">3</span>Manual readings <small>menu / service screen · cinema runtime</small></h2>
+          <div class="form">
+            <label>Shutter count from menu<input id="f-mcount" type="number" min="0" inputmode="numeric"></label>
+            <label>Runtime / operating hours<input id="f-runtime" type="number" step="0.1" min="0"></label>
+            <label>Sensor hours<input id="f-sensor" type="number" step="0.1" min="0"></label>
+            <label>Firmware<input id="f-firmware" autocomplete="off"></label>
+          </div>
+          <div id="drop2" class="drop sm" tabindex="0" role="button"><svg><use href="#i-camera"/></svg>
+            <div>Attach photos of the counter screen or service report</div><input id="file2" type="file" multiple hidden></div>
+          <div id="evList" class="chips"></div>
+        </div>
+
+        <div class="card">
+          <h2><span class="step">4</span>Condition &amp; offer</h2>
+          <div class="form">
+            <label>Cosmetic grade<select id="f-cosmetic">
+              <option value=""></option><option>Mint / like new</option><option>Excellent (light marks)</option>
+              <option>Very good (normal wear)</option><option>Good (visible wear)</option><option>Fair (heavy wear)</option><option>For parts</option>
+            </select></label>
+            <label>Offer<input id="f-offer" placeholder="$" autocomplete="off"></label>
+          </div>
+          <div class="checks-head"><span>Functional checks</span><span><button class="link" id="allPass">All pass</button> · <button class="link" id="clearChecks">Clear</button></span></div>
+          <div class="checks" id="checks"></div>
+          <label class="full"><span class="lt">Notes <small>(internal - not shown on the customer report card)</small></span><textarea id="f-notes" rows="3"></textarea></label>
+        </div>
+      </div>
+
+      <div class="savebar">
+        <div id="saveSummary" class="muted">Read a camera or enter a brand/model to save.</div>
+        <button id="saveBtn" class="primary big"><svg><use href="#i-save"/></svg>Save evaluation</button>
+      </div>
+    </section>
+
+    <!-- =============================== RECORDS =============================== -->
+    <section id="tab-records" class="tab">
+      <div class="pagehead">
+        <div><h1>Records</h1><p>Every evaluation, searchable. Click a row to view, edit, print or export.</p></div>
+        <div class="actions">
+          <a class="button secondary" id="xlsxBtn" href="/api/export.xlsx"><svg><use href="#i-sheet"/></svg>Excel</a>
+          <a class="button secondary" href="/api/export.csv"><svg><use href="#i-file"/></svg>CSV</a>
+        </div>
+      </div>
+      <div class="kpis" id="kpis"></div>
+      <div class="card">
         <div class="row">
-          <input id="scanPath" placeholder="…or type a folder path, e.g. E:\DCIM">
-          <button id="scanBtn" class="secondary">Scan folder</button>
+          <div class="search"><svg><use href="#i-search"/></svg><input id="recQ" placeholder="Search serial, model, PO, seller, staff, record ID…"></div>
+          <select id="recStatus" class="auto"><option value="">All statuses</option></select>
+        </div>
+        <div class="tablewrap"><table class="list" id="recTable"><thead><tr><th>Date</th><th>Camera</th><th>Serial</th><th class="num">Count</th><th>Life used</th><th>Grade</th><th>Status</th><th>PO</th></tr></thead>
+          <tbody id="recBody"></tbody></table></div>
+      </div>
+    </section>
+
+    <!-- =============================== VERIFY =============================== -->
+    <section id="tab-verify" class="tab">
+      <div class="pagehead"><div><h1>Verify a report card</h1><p>Confirm a customer's report card is genuine and unaltered.</p></div></div>
+      <div class="card narrow">
+        <div class="form">
+          <label>Certificate ID<input id="v-id" placeholder="20261105-101522-AB12" autocomplete="off"></label>
+          <label>Verification code<input id="v-code" placeholder="XXXX-XXXX-XXXX" autocomplete="off"></label>
+        </div>
+        <div class="row end"><button id="verifyBtn" class="primary"><svg><use href="#i-shield"/></svg>Verify</button></div>
+        <div id="verifyOut"></div>
+      </div>
+    </section>
+
+    <!-- =============================== GUIDE =============================== -->
+    <section id="tab-guide" class="tab">
+      <div class="pagehead"><div><h1>Brand guide</h1><p>Where each brand keeps its counters, and how to read them definitively.</p></div></div>
+      <div id="guideAll" class="guidegrid"></div>
+    </section>
+
+    <!-- =============================== RATINGS =============================== -->
+    <section id="tab-ratings" class="tab">
+      <div class="pagehead"><div><h1>Shutter ratings</h1><p>Rated shutter life used for "% life used" and the report card. Store overrides take priority.</p></div></div>
+      <div class="card">
+        <h2>Add or override a model</h2>
+        <div class="form five">
+          <label>Brand<input id="r-brand"></label>
+          <label>Display name<input id="r-name"></label>
+          <label><span class="lt">Model match <small>(regex)</small></span><input id="r-match" placeholder="^ILCE-7M4$"></label>
+          <label>Rated actuations<input id="r-rated" type="number" min="1000"></label>
+          <label class="inline end"><input id="r-eo" type="checkbox"> Electronic only</label>
+        </div>
+        <div class="row end"><button id="r-add" class="primary">Save rating</button></div>
+      </div>
+      <div class="card"><div class="tablewrap"><table class="list"><thead><tr><th>Brand</th><th>Model</th><th>Match</th><th class="num">Rated</th><th>Source</th><th></th></tr></thead><tbody id="ratBody"></tbody></table></div></div>
+    </section>
+
+    <!-- =============================== SETTINGS =============================== -->
+    <section id="tab-settings" class="tab">
+      <div class="pagehead"><div><h1>Settings</h1><p>Store branding for reports, data, security and updates.</p></div>
+        <div class="actions"><button id="setSave" class="primary"><svg><use href="#i-save"/></svg>Save settings</button></div></div>
+      <div class="grid2">
+        <div class="card">
+          <h2>Store &amp; report card</h2>
+          <div class="form">
+            <label>Store name<input id="s-store_name"></label>
+            <label>Report subtitle<input id="s-store_tagline"></label>
+            <label>Address<input id="s-store_address"></label>
+            <label>Phone<input id="s-store_phone"></label>
+            <label>Website<input id="s-store_web"></label>
+            <label>Default staff name<input id="s-default_staff"></label>
+            <label class="span2">Report card disclaimer<textarea id="s-report_disclaimer" rows="4"></textarea></label>
+          </div>
+          <h3>Logo <small>(PNG, shown on report cards and Word documents)</small></h3>
+          <div class="row"><img id="logoPrev" class="logoprev hidden" alt="">
+            <input type="file" id="logoFile" accept="image/png" hidden><button id="logoBtn" class="secondary">Upload PNG…</button>
+            <button id="logoDel" class="ghost hidden">Remove</button></div>
+        </div>
+        <div class="card">
+          <h2>"How long could it last?" profiles</h2>
+          <p class="hint">Frames per year used to estimate remaining years on the customer report card.</p>
+          <div id="profiles"></div>
+          <button id="addProfile" class="link">+ Add profile</button>
+          <h2 class="mt">Certificate signing key</h2>
+          <p class="hint">Report card verification codes are signed with this key. To let several store PCs verify each other's cards, copy the same key to each PC.</p>
+          <div class="row"><code id="keyHint" class="keyhint"></code><button id="keyReveal" class="secondary">Reveal &amp; copy</button></div>
+          <div class="row"><input id="keyNew" placeholder="Paste a key from another PC (32+ characters)"><button id="keySet" class="ghost">Use this key</button></div>
+        </div>
+        <div class="card">
+          <h2>Data &amp; backup</h2>
+          <dl class="kv" id="dataBox"></dl>
+          <div class="row"><a class="button secondary" href="/api/backup.zip"><svg><use href="#i-save"/></svg>Download full backup</a></div>
+        </div>
+        <div class="card">
+          <h2>Tools &amp; updates</h2>
+          <dl class="kv" id="toolsBox"></dl>
+          <div class="row"><button id="recheck" class="secondary">Re-check tools</button><button id="updBtn" class="secondary">Check for updates</button></div>
+          <div id="updOut"></div>
         </div>
       </div>
-    </div>
-  </div>
+    </section>
 
-  <div id="results"></div>
-  <div id="guideBox"></div>
-
-  <div class="grid2">
-    <div class="card">
-      <h2><span class="step">3</span> Manual readings <small>(menu / service screen, cinema runtime)</small></h2>
-      <div class="form">
-        <label>Shutter count from menu/service<input id="f-mcount" type="number" min="0"></label>
-        <label>Runtime / operating hours<input id="f-runtime" type="number" step="0.1" min="0"></label>
-        <label>Sensor hours<input id="f-sensor" type="number" step="0.1" min="0"></label>
+    <!-- =============================== ABOUT =============================== -->
+    <section id="tab-about" class="tab">
+      <div class="about card narrow">
+        <img src="/static/icon.svg" alt="" class="abouticon">
+        <h1>Camera Check</h1>
+        <p class="ver">Version {{VERSION}}</p>
+        <p><b>Created by Emmet Adriaans for Vistek Ltd.</b></p>
+        <p class="muted">Used-camera intake, verification and condition reporting - shutter counts, serial verification, cinema runtime, customer report cards and exports.</p>
+        <h3>Recommended intake procedure</h3>
+        <ol class="sop">
+          <li>Record the serial from the body label first.</li>
+          <li>Use the store's own card; format it in the camera and shoot two frames.</li>
+          <li>Read over USB or from the card reader - never accept seller-supplied files.</li>
+          <li>Serial match must be green.</li>
+          <li>For brands without file counters, follow the Brand guide and attach a photo of the counter screen.</li>
+          <li>Complete the checks, save, and print or email the report card.</li>
+        </ol>
+        <h3>Credits</h3>
+        <p class="muted small">Metadata decoding by ExifTool © Phil Harvey (exiftool.org, Artistic/GPL licence). PTP vendor codes from the libgphoto2 project (LGPL). Windows USB via comtypes (MIT).</p>
       </div>
-      <p class="hint">Photograph the menu screen showing the counter and attach it as evidence.</p>
-      <div id="drop2" class="drop small" tabindex="0"><div>Attach screen photos / service reports</div><input id="file2" type="file" multiple hidden></div>
-      <div id="evList" class="chips"></div>
-    </div>
+    </section>
+  </main>
+</div>
 
-    <div class="card">
-      <h2><span class="step">4</span> Condition &amp; offer</h2>
-      <div class="form">
-        <label>Cosmetic grade<select id="f-cosmetic">
-          <option value="">–</option><option>Mint / like new</option><option>Excellent (light marks)</option>
-          <option>Very good (normal wear)</option><option>Good (visible wear)</option><option>Fair (heavy wear)</option><option>For parts</option>
-        </select></label>
-        <label>Offer<input id="f-offer" placeholder="$"></label>
-      </div>
-      <div class="checks" id="checks"></div>
-      <label class="full">Notes<textarea id="f-notes" rows="3"></textarea></label>
-      <div class="row end">
-        <button id="resetBtn" class="secondary">Clear</button>
-        <button id="saveBtn" class="primary">Save evaluation &amp; open report</button>
-      </div>
-    </div>
+<!-- record drawer -->
+<div id="drawer" class="drawer hidden" aria-hidden="true">
+  <div class="drawer-bg" data-close></div>
+  <div class="drawer-panel" role="dialog" aria-modal="true" aria-labelledby="dwTitle">
+    <div class="drawer-head"><div><h2 id="dwTitle"></h2><small id="dwSub" class="muted"></small></div><button class="icon" data-close aria-label="Close"><svg><use href="#i-x"/></svg></button></div>
+    <div class="drawer-body" id="dwBody"></div>
   </div>
-</section>
+</div>
 
-<!-- ============================ RECORDS ============================ -->
-<section id="tab-records" class="tab">
-  <div class="card">
-    <div class="row">
-      <input id="recQ" placeholder="Search serial, model, PO, seller…">
-      <button id="recSearch">Search</button>
-      <a class="button secondary" href="/api/export.csv">Export CSV</a>
-    </div>
-    <table class="list"><thead><tr><th>Date</th><th>Camera</th><th>Serial</th><th>Count</th><th>Life used</th><th>Grade</th><th>Hours</th><th>PO</th><th></th></tr></thead>
-    <tbody id="recBody"></tbody></table>
-  </div>
-</section>
+<!-- saved dialog -->
+<div id="modal" class="modal hidden" role="dialog" aria-modal="true">
+  <div class="modal-card" id="modalCard"></div>
+</div>
 
-<!-- ============================ GUIDE ============================ -->
-<section id="tab-guide" class="tab">
-  <div class="card"><h2>What each brand reveals</h2>
-    <p class="hint">How to get a definitive count for each brand. Confidence reflects how trustworthy the file-based figure is.</p>
-    <div id="guideAll"></div>
-  </div>
-</section>
-
-<!-- ============================ RATINGS ============================ -->
-<section id="tab-ratings" class="tab">
-  <div class="card">
-    <h2>Rated shutter life</h2>
-    <p class="hint">Used to compute % of life used. "reported" figures are not manufacturer-published - verify. Add a store override (saved to your data folder; takes priority):</p>
-    <div class="row">
-      <input id="r-brand" placeholder="Brand" style="max-width:130px">
-      <input id="r-name" placeholder="Display name">
-      <input id="r-match" placeholder="Model match (regex), e.g. ^ILCE-7M4$">
-      <input id="r-rated" type="number" placeholder="Rated actuations" style="max-width:160px">
-      <label class="inline"><input id="r-eo" type="checkbox"> electronic only</label>
-      <button id="r-add">Save</button>
-    </div>
-    <table class="list"><thead><tr><th>Brand</th><th>Model</th><th>Match</th><th>Rated</th><th>Source</th><th></th></tr></thead><tbody id="ratBody"></tbody></table>
-  </div>
-</section>
-
-<!-- ============================ SETUP ============================ -->
-<section id="tab-setup" class="tab">
-  <div class="card"><h2>System status</h2><div id="statusBox"></div>
-    <button id="recheck" class="secondary">Re-check tools</button></div>
-  <div class="card"><h2>Intake procedure (recommended SOP)</h2>
-    <ol class="sop">
-      <li>Record the serial from the body label / under the mount <b>before</b> anything else.</li>
-      <li>Insert the <b>store's own card</b>, format it in the camera, and take 2 frames (mechanical shutter) a few seconds apart.</li>
-      <li>Drop both files into Camera Check. Never accept files emailed or supplied by the seller - counters inside files can be edited.</li>
-      <li>Confirm the serial match is green. A mismatch means the files or the body are not what they claim.</li>
-      <li>For brands without file counters (OM System, Panasonic, Leica, Hasselblad, Fujifilm, most Canon DSLRs) follow the Brand guide, photograph the counter screen and attach it.</li>
-      <li>Cinema cameras: photograph the system-info / hours-meter screen, enter runtime &amp; sensor hours, attach the camera log if exported.</li>
-      <li>Complete the functional checklist, then save. Print or save the report as PDF to the purchase file.</li>
-    </ol>
-  </div>
-</section>
-</main>
-
-<div id="toast" class="toast hidden"></div>
+<div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
 <script src="/static/app.js"></script>
 </body>
 </html>

@@ -107,9 +107,17 @@ def read_metadata(paths):
     if not cmd:
         raise RuntimeError("ExifTool not found. Run the installer in the tools folder "
                            "(see README) or install it from exiftool.org.")
-    # Use an argfile so non-ASCII file names survive on Windows.
+    # Use an argfile so non-ASCII file names survive on Windows. Arguments in an argfile are
+    # newline-separated, so refuse names containing line breaks (argument injection), and pass
+    # absolute paths only so no file name can ever be read as an option.
+    safe = []
+    for p in paths:
+        p = os.path.abspath(p)
+        if "\n" in p or "\r" in p:
+            raise ValueError(f"Unsupported file name: {os.path.basename(p)!r}")
+        safe.append(p)
     args = ["-j", "-a", "-u", "-G1", "-n", "-api", "LargeFileSupport=1",
-            "-charset", "filename=utf8"] + list(paths)
+            "-charset", "filename=utf8", "--"] + safe
     fd, argfile = tempfile.mkstemp(suffix=".args")
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as fh:

@@ -40,6 +40,24 @@ _CINEMA = [
 ]
 
 
+_MAKE_PREFIX = re.compile(r"^(nikon( corporation)?|canon|sony|fujifilm|fuji|olympus|om digital solutions|om system|"
+                          r"panasonic|leica|hasselblad|pentax|ricoh|sigma|red|arri|blackmagic( design)?)\s+", re.I)
+
+
+def display_name(brand, model, rating=None):
+    """Human name: 'Nikon Z 6II', 'Sony Alpha 7 III', 'Canon EOS R5' (never 'Canon Canon EOS R5')."""
+    model = (model or "").strip()
+    if rating and rating.get("name") and "/" not in rating["name"]:
+        return f"{brand} {rating['name']}".strip()
+    rest = _MAKE_PREFIX.sub("", model).strip() or model
+    if brand and rest.lower().startswith(brand.lower()):
+        return rest
+    return f"{brand} {rest}".strip() if brand and brand != "Unknown" else rest
+
+
+pretty_name = display_name  # analyze() has a parameter called display_name
+
+
 def normalize_brand(make, model=""):
     for mk, md, name in _CINEMA:
         if re.search(mk, f"{make or ''} {model or ''}", re.I) and re.search(md, (model or "").strip(), re.I):
@@ -324,6 +342,7 @@ def analyze(raw, ratings=None, now=None, display_name=None):
         "brand": brand,
         "make": make,
         "model": model,
+        "display_name": pretty_name(brand, model, rating),
         "serial": re.sub(r"^\s*NO=\s*", "", str(serial)).strip() if serial is not None else None,
         "internal_serial": str(internal) if internal is not None else None,
         "lens": str(lens) if lens is not None else None,

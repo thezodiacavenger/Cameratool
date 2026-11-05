@@ -127,7 +127,7 @@ def newest_files(root, limit=24, max_walk=30000):
         dirs[:] = [d for d in dirs if not d.startswith(".") and d.upper() not in ("$RECYCLE.BIN", "SYSTEM VOLUME INFORMATION")]
         for name in names:
             n += 1
-            if name.startswith("._"):
+            if name.startswith("._") or "\n" in name or "\r" in name:
                 continue
             p = os.path.join(dirpath, name)
             try:

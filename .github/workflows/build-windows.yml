@@ -20,7 +20,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install build tools
-        run: python -m pip install --upgrade pip pyinstaller comtypes
+        run: python -m pip install --upgrade pip pyinstaller comtypes pillow openpyxl python-docx
 
       - name: Unit tests
         run: python tools/ci_tests.py
@@ -28,9 +28,13 @@ jobs:
       - name: Pre-generate Windows Portable Devices wrappers
         run: python -c "import comtypes.client as c; c.GetModule('portabledeviceapi.dll'); c.GetModule('portabledevicetypes.dll'); import comtypes.gen.PortableDeviceApiLib, comtypes.gen.PortableDeviceTypesLib; print('WPD wrappers OK')"
 
+      - name: Generate icon and version info (Emmet Adriaans / Created for Vistek Ltd.)
+        run: python tools/make_build_files.py
+
       - name: Build CameraCheck.exe
         run: >
           pyinstaller --noconfirm --name CameraCheck --console
+          --icon build/CameraCheck.ico --version-file build/version_info.txt
           --collect-submodules comtypes
           --add-data "camcheck/web;camcheck/web"
           --add-data "camcheck/data;camcheck/data"
@@ -61,6 +65,8 @@ jobs:
           @"
           Camera Check - Windows
           ======================
+          Created by Emmet Adriaans for Vistek Ltd.
+
           Double-click CameraCheck.exe. No Python or other installs needed.
           Keep this whole folder together (the exe needs the _internal and tools folders).
           Records are stored in %APPDATA%\CameraCheck.
@@ -97,3 +103,5 @@ jobs:
           body: |
             **Download `CameraCheck-Windows.zip`**, unzip it anywhere (e.g. Desktop), and double-click `CameraCheck.exe`.
             No Python or other software needed - ExifTool and USB camera support are built in.
+
+            Created by Emmet Adriaans for Vistek Ltd. See CHANGELOG.md for what's new.

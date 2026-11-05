@@ -1,28 +1,74 @@
-# Camera Check: Used Camera Intake & Condition Evaluator (v1.1)
+# Camera Check: Used Camera Intake, Verification & Report Cards (v2.0)
+
+*Created by Emmet Adriaans for Vistek Ltd.*
 
 A desktop tool for a camera store's buying desk. It reads a camera's shutter/actuation
-count, serial number and other diagnostic data in one of two ways:
+count, serial number and cinema runtime **over USB or from the memory card**. It then:
 
-- **directly over a USB cable** to the Windows PC, or
-- **from the memory card** in a card reader: SD, microSD, CFexpress Type A/B, CFast or XQD.
+- confirms the camera is the body you are holding
+- grades shutter wear against the rated life
+- saves an evaluation record
+- issues the customer a **tamper-evident report card**
 
-It then checks that data against the body you are holding, grades shutter wear against
-the rated life, and saves a printable evaluation record for every purchase.
-
-Everything runs locally on the shop PC, and no customer data leaves the machine.
+Everything runs locally on the store PC, and no customer data leaves the machine.
 
 ---
 
-## Quick start (Windows)
-1. Install Python 3 from python.org and tick **Add python.exe to PATH**.
-2. Double-click **`Start Camera Check (Windows).bat`**.
-   - The first run downloads **ExifTool** (the metadata decoder) and **comtypes** (USB camera support) automatically.
-3. The app opens in its own window. To quit, close the black console window.
+## Install (Windows, no Python needed)
+1. Download **CameraCheck-Windows.zip** from the latest release:
+   https://github.com/thezodiacavenger/Cameratool/releases/latest
+2. Unzip it anywhere and double-click **CameraCheck.exe**. Keep the folder together.
+3. On first launch, Windows SmartScreen may say *Windows protected your PC*. Click
+   **More info → Run anyway**. This warning appears because the exe is not code-signed (see below).
 
-macOS: run `Start Camera Check (Mac).command`, plus `brew install gphoto2` for USB. Linux: run `start_linux.sh`.
+Developers can run from source instead: `Start Camera Check (Windows).bat` (Python 3) or
+`Start Camera Check (Mac).command`.
 
-**No Python on shop PCs?** On one Windows machine, run `tools\build_windows_exe.bat`
-to build a standalone `CameraCheck.exe` folder, then copy that folder to each PC.
+## Daily use
+1. **Intake.** Type the serial from the body label first. Every reading is checked against it.
+2. **Read the camera**, using one of the three tabs:
+   - **Card reader:** inserted cards are detected and scanned automatically.
+   - **USB cable:** reads live counters where the camera provides them, and downloads the newest photo to decode.
+   - **Files:** drag and drop image or clip files.
+3. **Manual readings.** Enter service-menu counts and cinema runtime/sensor hours, and attach a photo of the screen.
+4. **Condition and offer.** Choose a cosmetic grade, mark the Pass/Fail/N/A checks, and add internal notes.
+5. **Save.** The save dialog gives you:
+   - the customer report card (print or save as PDF)
+   - the report card as a Word file
+   - the internal report (web page or Word)
+   - a "copy summary" button
+
+### Copying information into other documents
+- Every value (serial, count, firmware, codes) has a copy button.
+- **Copy summary** copies a plain-text block for emails or tickets.
+- **Copy as table** copies a formatted table that pastes into Word or Excel as a real table.
+
+### Exports
+| What | Where |
+|---|---|
+| All records to **Excel** (.xlsx), with filters and a "By brand" summary sheet | Records → Excel (follows the current search/status filter) |
+| All records to **CSV** | Records → CSV |
+| One record as an **internal evaluation** (Word or PDF) | Record panel / save dialog |
+| One record as a **customer report card** (Word or PDF) | Record panel / save dialog |
+| **Full backup** (database, settings, logo, evidence photos) | Settings → Download full backup |
+
+### Customer report card
+The report card shows:
+- **shutter life remaining**, as a percentage and as estimated actuations left
+- an **A–F health grade** with a plain-English explanation
+- **how many years** the shutter could last at different shooting volumes (profiles are editable in Settings)
+- the verification checklist: serial matched, read directly from the camera, fresh capture
+- the inspection results, plus runtime and sensor hours for cinema cameras
+
+Counters that are only a lower bound, such as Fujifilm file counts, are labelled as estimates.
+
+Internal information (offer, seller, PO, staff notes, fraud flags) is never shown on the card.
+
+Each card carries a **certificate ID** and a **verification code** signed with the store's key.
+In the **Verify report** tab, staff can confirm a card is genuine and unaltered. For example,
+when a camera you sold comes back as a trade-in, or a buyer asks about one sold privately.
+To let several PCs verify each other's cards, copy the signing key between them
+(Settings → Certificate signing key).
 
 ## Reading a camera
 
@@ -70,6 +116,20 @@ the app shows a hard fail.
 Use this for counters that live only in service menus (OM System hidden menu, Panasonic,
 Leica, Hasselblad) and for **cinema runtime and sensor hours**. Enter the values and
 attach a photo of the screen. The in-app **Brand guide** has the menu paths.
+
+## Security
+- The app only listens on this PC (127.0.0.1) and refuses requests that use any other host name.
+- A random session secret is created each launch. It is stored in an HttpOnly, SameSite=Strict cookie, and a
+  matching token header is required for every change, so other websites cannot use the app.
+- A strict Content-Security-Policy blocks inline script. Uploaded files are never served as web pages.
+- Record IDs, evidence IDs and file names are validated, and uploads are capped at 2 GB.
+- Spreadsheet exports are protected against formula injection.
+
+## Publisher and code signing
+The exe's **Properties → Details** shows *Emmet Adriaans* and *Created for Vistek Ltd.*
+Windows SmartScreen's *Publisher* line only comes from a **code-signing certificate**. To remove the
+"unknown publisher" warning, buy an OV or EV code-signing certificate (or use Azure Trusted Signing)
+in the name of Emmet Adriaans or Vistek Ltd. The build workflow can then sign the exe automatically.
 
 ## Automatic checks
 - **Serial match:** the serial in the file or from USB must match the serial on the body label. A mismatch is a hard fail.
