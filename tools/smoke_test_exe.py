@@ -57,7 +57,8 @@ def post(path, data, headers=None):
         return json.loads(r.read())
 
 
-env = dict(os.environ, CAMCHECK_DATA=tempfile.mkdtemp(), CAMCHECK_PORT=str(PORT))
+DATA = tempfile.mkdtemp()
+env = dict(os.environ, CAMCHECK_DATA=DATA, CAMCHECK_PORT=str(PORT))
 proc = subprocess.Popen([EXE, "--no-window"], env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 try:
     for _ in range(60):
@@ -156,6 +157,12 @@ try:
             fail(f"certificate did not verify: {v}")
         note(f"record {rid} saved; report card, Word, Excel, CSV and backup exports OK; certificate {saved['cert_code']} verified")
 finally:
+    if failures:
+        try:
+            with open(os.path.join(DATA, "camcheck.log"), encoding="utf-8", errors="replace") as fh:
+                print("::error title=app log::" + fh.read()[-6000:].replace("%", "%25").replace("\r", "").replace("\n", "%0A"))
+        except OSError as ex:
+            print(f"::error title=app log::no log file ({ex})")
     proc.terminate()
 
 if failures:
