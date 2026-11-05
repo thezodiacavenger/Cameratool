@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Camera Check</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header>
+  <div class="brand"><span class="logo">◉</span> Camera Check <small id="ver"></small></div>
+  <nav>
+    <button data-tab="evaluate" class="active">Evaluate</button>
+    <button data-tab="records">Records</button>
+    <button data-tab="guide">Brand guide</button>
+    <button data-tab="ratings">Shutter ratings</button>
+    <button data-tab="setup">Setup</button>
+  </nav>
+</header>
+<div id="banner" class="banner hidden"></div>
+
+<main>
+<!-- ============================ EVALUATE ============================ -->
+<section id="tab-evaluate" class="tab active">
+  <div class="grid2">
+    <div class="card">
+      <h2><span class="step">1</span> Intake</h2>
+      <div class="form">
+        <label>Staff<input id="f-staff" placeholder="Your name"></label>
+        <label>PO / trade-in #<input id="f-reference"></label>
+        <label>Seller / customer<input id="f-seller"></label>
+        <label>Serial on body label<input id="f-label" placeholder="Read from the camera body"></label>
+        <label>Brand (if no file)<select id="f-brand"></select></label>
+        <label>Model (if no file)<input id="f-model"></label>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2><span class="step">2</span> Read the camera</h2>
+      <p class="hint">Take <b>one fresh photo now</b> (mechanical shutter, no editing), then read it by USB <i>or</i> from the card.</p>
+      <div class="sub">
+        <h3>USB cable <small id="usbBackend"></small></h3>
+        <div class="row" style="margin-top:4px">
+          <button id="usbBtn" class="primary">Read camera over USB</button>
+          <span id="usbHint" class="hint"></span>
+        </div>
+        <details><summary>USB mode per brand</summary>
+          <ul class="tight">
+            <li><b>Nikon</b> - USB: MTP/PTP. Reads serial + newest photo's shutter count.</li>
+            <li><b>Canon</b> - default (no Wi-Fi active). Live shutter counter on EOS bodies that expose it, plus newest photo.</li>
+            <li><b>Sony</b> - USB Connection: <i>MTP</i> (or PC Remote). Newest photo is decoded. <i>Mass Storage</i> makes it appear as a card instead.</li>
+            <li><b>Fujifilm</b> - Connection Setting: <i>USB tether / PC auto</i> for the live TotalShotCount; <i>USB card reader</i> mode appears as a card.</li>
+            <li><b>OM System / Olympus</b> - choose <i>MTP</i> or <i>PC (tether)</i> on the USB prompt; <i>Storage</i> appears as a card.</li>
+            <li><b>Panasonic / Leica</b> - <i>PC (Storage)</i> appears as a card; <i>PC (Tether)</i>/PTP for serial.</li>
+            <li>Close Windows Photos / Lightroom import / EOS Utility first - only one program can talk to a camera.</li>
+          </ul>
+        </details>
+      </div>
+      <div class="sub">
+        <h3>Card reader <small>SD · microSD · CFexpress A/B · CFast · XQD</small>
+          <label class="inline right"><input type="checkbox" id="autoScan" checked> auto-scan new cards</label></h3>
+        <div id="cards" class="cards"><span class="hint">Looking for cards…</span></div>
+        <div id="drop" class="drop small" tabindex="0">
+          <div><b>…or drop files here</b> / click to browse</div>
+          <input id="file" type="file" multiple hidden>
+        </div>
+        <div class="row">
+          <input id="scanPath" placeholder="…or type a folder path, e.g. E:\DCIM">
+          <button id="scanBtn" class="secondary">Scan folder</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="results"></div>
+  <div id="guideBox"></div>
+
+  <div class="grid2">
+    <div class="card">
+      <h2><span class="step">3</span> Manual readings <small>(menu / service screen, cinema runtime)</small></h2>
+      <div class="form">
+        <label>Shutter count from menu/service<input id="f-mcount" type="number" min="0"></label>
+        <label>Runtime / operating hours<input id="f-runtime" type="number" step="0.1" min="0"></label>
+        <label>Sensor hours<input id="f-sensor" type="number" step="0.1" min="0"></label>
+      </div>
+      <p class="hint">Photograph the menu screen showing the counter and attach it as evidence.</p>
+      <div id="drop2" class="drop small" tabindex="0"><div>Attach screen photos / service reports</div><input id="file2" type="file" multiple hidden></div>
+      <div id="evList" class="chips"></div>
+    </div>
+
+    <div class="card">
+      <h2><span class="step">4</span> Condition &amp; offer</h2>
+      <div class="form">
+        <label>Cosmetic grade<select id="f-cosmetic">
+          <option value="">–</option><option>Mint / like new</option><option>Excellent (light marks)</option>
+          <option>Very good (normal wear)</option><option>Good (visible wear)</option><option>Fair (heavy wear)</option><option>For parts</option>
+        </select></label>
+        <label>Offer<input id="f-offer" placeholder="$"></label>
+      </div>
+      <div class="checks" id="checks"></div>
+      <label class="full">Notes<textarea id="f-notes" rows="3"></textarea></label>
+      <div class="row end">
+        <button id="resetBtn" class="secondary">Clear</button>
+        <button id="saveBtn" class="primary">Save evaluation &amp; open report</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ RECORDS ============================ -->
+<section id="tab-records" class="tab">
+  <div class="card">
+    <div class="row">
+      <input id="recQ" placeholder="Search serial, model, PO, seller…">
+      <button id="recSearch">Search</button>
+      <a class="button secondary" href="/api/export.csv">Export CSV</a>
+    </div>
+    <table class="list"><thead><tr><th>Date</th><th>Camera</th><th>Serial</th><th>Count</th><th>Life used</th><th>Grade</th><th>Hours</th><th>PO</th><th></th></tr></thead>
+    <tbody id="recBody"></tbody></table>
+  </div>
+</section>
+
+<!-- ============================ GUIDE ============================ -->
+<section id="tab-guide" class="tab">
+  <div class="card"><h2>What each brand reveals</h2>
+    <p class="hint">How to get a definitive count for each brand. Confidence reflects how trustworthy the file-based figure is.</p>
+    <div id="guideAll"></div>
+  </div>
+</section>
+
+<!-- ============================ RATINGS ============================ -->
+<section id="tab-ratings" class="tab">
+  <div class="card">
+    <h2>Rated shutter life</h2>
+    <p class="hint">Used to compute % of life used. "reported" figures are not manufacturer-published - verify. Add a store override (saved to your data folder; takes priority):</p>
+    <div class="row">
+      <input id="r-brand" placeholder="Brand" style="max-width:130px">
+      <input id="r-name" placeholder="Display name">
+      <input id="r-match" placeholder="Model match (regex), e.g. ^ILCE-7M4$">
+      <input id="r-rated" type="number" placeholder="Rated actuations" style="max-width:160px">
+      <label class="inline"><input id="r-eo" type="checkbox"> electronic only</label>
+      <button id="r-add">Save</button>
+    </div>
+    <table class="list"><thead><tr><th>Brand</th><th>Model</th><th>Match</th><th>Rated</th><th>Source</th><th></th></tr></thead><tbody id="ratBody"></tbody></table>
+  </div>
+</section>
+
+<!-- ============================ SETUP ============================ -->
+<section id="tab-setup" class="tab">
+  <div class="card"><h2>System status</h2><div id="statusBox"></div>
+    <button id="recheck" class="secondary">Re-check tools</button></div>
+  <div class="card"><h2>Intake procedure (recommended SOP)</h2>
+    <ol class="sop">
+      <li>Record the serial from the body label / under the mount <b>before</b> anything else.</li>
+      <li>Insert the <b>store's own card</b>, format it in the camera, and take 2 frames (mechanical shutter) a few seconds apart.</li>
+      <li>Drop both files into Camera Check. Never accept files emailed or supplied by the seller - counters inside files can be edited.</li>
+      <li>Confirm the serial match is green. A mismatch means the files or the body are not what they claim.</li>
+      <li>For brands without file counters (OM System, Panasonic, Leica, Hasselblad, Fujifilm, most Canon DSLRs) follow the Brand guide, photograph the counter screen and attach it.</li>
+      <li>Cinema cameras: photograph the system-info / hours-meter screen, enter runtime &amp; sensor hours, attach the camera log if exported.</li>
+      <li>Complete the functional checklist, then save. Print or save the report as PDF to the purchase file.</li>
+    </ol>
+  </div>
+</section>
+</main>
+
+<div id="toast" class="toast hidden"></div>
+<script src="/static/app.js"></script>
+</body>
+</html>

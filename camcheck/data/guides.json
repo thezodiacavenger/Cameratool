@@ -1,0 +1,155 @@
+{
+  "_readme": "Per-brand procedures shown to staff. 'file' = what a fresh out-of-camera file reveals, 'usb' = tethered readout, 'menu' = in-camera/service procedure. Menu paths change between firmware versions - staff should photograph the screen and attach it to the record as evidence. Edit freely.",
+  "brands": [
+    {
+      "brand": "Nikon",
+      "file": "Excellent. Nikon writes the total release count (ShutterCount) into the MakerNote of every JPEG/NEF, and newer Z bodies also write MechanicalShutterCount. Shoot one fresh JPEG or NEF.",
+      "usb": "Connect by USB (MTP/PTP). Nikon does not publish the count as a live USB property, so the app reads the serial over USB and downloads the newest photo from the camera to decode its ShutterCount. Shoot a frame first.",
+      "menu": "No user menu readout. Nikon service can print a full counter history.",
+      "notes": [
+        "Z 8 / Z 9 have no mechanical shutter - the count is releases, not shutter wear.",
+        "Serial in the file matches the body label serial."
+      ],
+      "confidence": "high"
+    },
+    {
+      "brand": "Canon",
+      "file": "Partial. Recent mirrorless bodies (EOS R5, R6, R6 Mark II, RP family, R50 V, G5 X II) and the 1D Mark III store ShutterCount in files (electronic + mechanical combined). Most DSLRs (5D, 6D, 7D, 80D/90D etc.) do NOT store it in files.",
+      "usb": "Connect by USB. EOS bodies that expose the live ShutterCounter (PTP property 0xD1AC) are read directly; the newest photo is also downloaded and decoded. Older DSLRs that expose neither need Canon service or a Canon-specific utility.",
+      "menu": "No user menu readout.",
+      "notes": [
+        "Canon mirrorless counts include silent/electronic shutter frames, so they overstate mechanical wear.",
+        "Ask the seller for the Canon service report if the body cannot be read."
+      ],
+      "confidence": "medium"
+    },
+    {
+      "brand": "Sony",
+      "file": "Good. Alpha bodies store ShutterCount (mechanical releases, does not advance in silent shooting) plus ImageCount (all frames incl. electronic) in encrypted MakerNote tags that ExifTool decodes. Use an unedited JPEG or ARW.",
+      "usb": "Set USB Connection to MTP (or PC Remote). The app downloads the newest photo from the camera and decodes its ShutterCount/ImageCount. In Mass Storage mode the camera appears as a card instead - same result.",
+      "menu": "No user readout. Sony service only.",
+      "notes": [
+        "On some early models (e.g. original A7R) the counter wraps at 65,536 - a low number can mean 65k+ more.",
+        "Sony 'InternalSerialNumber' is not the body label serial; compare the label to 'SerialNumber' where present."
+      ],
+      "confidence": "high"
+    },
+    {
+      "brand": "Fujifilm",
+      "file": "Limited. Recent X/GFX bodies write an ImageCount tag. It may reset after firmware updates and is a 15-bit value (rolls over above 32,767). Treat as a lower bound.",
+      "usb": "Set Connection to USB tether / PC auto: many X and GFX bodies expose a live TotalShotCount (PTP 0xD310). This is more trustworthy than the file ImageCount. In 'USB card reader' mode the camera appears as a card.",
+      "menu": "No user readout. Fujifilm service can read the true count; request a service report for high-value bodies.",
+      "notes": [
+        "Inspect shutter curtains, sensor and EVF closely - counts are not authoritative for Fuji."
+      ],
+      "confidence": "medium"
+    },
+    {
+      "brand": "OM System",
+      "file": "Not stored in files.",
+      "usb": "Choose MTP/PC tether on the camera's USB prompt. Bodies that expose the Olympus ShutterActuationCount property (PTP 0xD059) are read live. Experimental - confirm against the service menu.",
+      "menu": "Hidden service menu (Olympus / OM System bodies): MENU > Setup (wrench) > highlight 'Monitor adjust' (brightness) > press RIGHT, then hold INFO and press OK; on the next screen press UP, DOWN, LEFT, RIGHT, shutter release, UP. Page with the arrow keys - 'A' or 'S' on page 2 is the mechanical shutter count. Sequence varies slightly by model.",
+      "notes": [
+        "Photograph the service screen and attach it to the record."
+      ],
+      "confidence": "medium"
+    },
+    {
+      "brand": "Panasonic",
+      "file": "Not stored in files for most Lumix bodies.",
+      "usb": "PTP/tether gives serial and newest photo only (no counter in files). 'PC (Storage)' appears as a card.",
+      "menu": "Service/diagnostic mode is model-specific (key-combination at power-on) and reached via authorised service. Ask the seller for a Panasonic service report, or send to service for a readout on high-value S-series bodies.",
+      "notes": [
+        "Fall back to physical inspection: shutter curtains, mount wear, grip, battery door, EVF eyecup."
+      ],
+      "confidence": "low"
+    },
+    {
+      "brand": "Leica",
+      "file": "Generally not stored in files (SL/Q/CL bodies are Panasonic-derived; M bodies vary).",
+      "usb": "USB (PTP) gives model, firmware and serial; newest photo is downloaded for serial verification.",
+      "menu": "Leica Customer Care can read counters. Check the firmware/'Camera Information' screens on your model for a service counter display.",
+      "notes": [
+        "Verify the body serial on the top plate / mount against the file's SerialNumber - Leica writes the body serial into files."
+      ],
+      "confidence": "low"
+    },
+    {
+      "brand": "Hasselblad",
+      "file": "Body serial is written to files; actuation counts are not reliably exposed via standard metadata.",
+      "usb": "Tether to Phocus and check camera/lens information. X-system leaf-shutter XCD lenses carry their own shutter wear - check each lens.",
+      "menu": "Check Settings > Camera / About information screens on the body (model-dependent).",
+      "notes": [
+        "Leaf shutters wear in the lens, not the body."
+      ],
+      "confidence": "low"
+    },
+    {
+      "brand": "Pentax",
+      "file": "Excellent. ShutterCount is stored in the MakerNote of JPEG/PEF/DNG files.",
+      "usb": "USB (PTP/MSC) - newest photo is decoded; same as the card method.",
+      "menu": "No user readout.",
+      "notes": [],
+      "confidence": "high"
+    },
+    {
+      "brand": "ARRI",
+      "kind": "cinema",
+      "file": "Clip metadata (MXF/ARRIRAW) carries camera serial and camera ID but not operating hours.",
+      "usb": "Network/web remote on ALEXA Mini, LF, 35 shows system info.",
+      "menu": "MENU > System > Info (System Info / Versions) shows camera serial and operating hours on ALEXA Mini / Mini LF / ALEXA 35 (path varies by SUP). Export the camera log (System > Service) for ARRI service history.",
+      "notes": [
+        "Record operating/sensor hours and SUP version.",
+        "Check fan noise, sensor for scratches, PL/LPL mount shims."
+      ],
+      "confidence": "medium"
+    },
+    {
+      "brand": "RED",
+      "kind": "cinema",
+      "file": "R3D clips carry the camera SerialNumber and storage serial (ExifTool reads these).",
+      "usb": "RED Control app / web interface on recent bodies shows system status.",
+      "menu": "Menu > System > Status / Information shows serial, firmware and runtime/sensor hours on DSMC2 / V-RAPTOR / KOMODO (path varies by firmware). Export logs via the System > Maintenance menu.",
+      "notes": [
+        "Check the sensor OLPF, fan, and whether the body has had a sensor swap (serial mismatch in logs)."
+      ],
+      "confidence": "medium"
+    },
+    {
+      "brand": "Sony Cinema",
+      "kind": "cinema",
+      "file": "XAVC/X-OCN clip XML sidecars (NonRealTimeMeta) include the device model and serial number.",
+      "usb": "Not available.",
+      "menu": "VENICE / FX9 / FX6 / FX3 / FR7: Maintenance menu > Hours Meter (operation hours, fan hours). Path varies by model.",
+      "notes": [],
+      "confidence": "medium"
+    },
+    {
+      "brand": "Canon Cinema EOS",
+      "kind": "cinema",
+      "file": "Cinema RAW Light (CRM) and MP4 files carry model and serial in Canon metadata where supported.",
+      "usb": "Not available.",
+      "menu": "C70 / C300 Mk II-III / C500 Mk II: Maintenance or System Setup menu > Time/Hour meter (operation time). Path varies by model.",
+      "notes": [],
+      "confidence": "medium"
+    },
+    {
+      "brand": "Blackmagic Design",
+      "kind": "cinema",
+      "file": "BRAW clips carry camera metadata; serial is shown by Blackmagic Camera Setup utility over USB.",
+      "usb": "Blackmagic Camera Setup (USB) shows model, serial and firmware.",
+      "menu": "No public runtime-hours counter. Inspect sensor, fan, media slots and ports.",
+      "notes": [],
+      "confidence": "low"
+    },
+    {
+      "brand": "Panasonic Cinema",
+      "kind": "cinema",
+      "file": "Clip metadata includes model and serial.",
+      "usb": "Not available.",
+      "menu": "VariCam / EVA1 / BGH1: System / Maintenance > Hour Meter or System Information (model dependent).",
+      "notes": [],
+      "confidence": "medium"
+    }
+  ]
+}
