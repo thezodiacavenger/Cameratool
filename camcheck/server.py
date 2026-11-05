@@ -220,8 +220,7 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def _json(self):
-        n = int(self.headers.get("Content-Length") or 0)
-        return json.loads(self.rfile.read(n) or b"{}")
+        return json.loads(self._body or b"{}")
 
     def _local_only(self):
         host = (self.headers.get("Host") or "").split(":")[0]
@@ -283,6 +282,11 @@ class Handler(BaseHTTPRequestHandler):
         if not self._local_only():
             return
         p = urllib.parse.urlparse(self.path).path
+        # Always consume the request body: on Windows, closing a socket with unread
+        # data resets the connection before the client receives the response.
+        self._body = b""
+        if p != "/api/upload":
+            self._body = self.rfile.read(int(self.headers.get("Content-Length") or 0))
         try:
             if p == "/api/upload":
                 name = urllib.parse.unquote(self.headers.get("X-Filename") or "upload.bin")
