@@ -43,9 +43,20 @@ jobs:
       - name: Bundle ExifTool (exiftool.org, Phil Harvey)
         shell: pwsh
         run: |
-          $ver = (Invoke-WebRequest -UseBasicParsing "https://exiftool.org/ver.txt").Content.Trim()
+          function Fetch($url, $out) {
+            for ($i = 1; $i -le 5; $i++) {
+              try { Invoke-WebRequest -UseBasicParsing -UserAgent "Wget" $url -OutFile $out; if ((Get-Item $out).Length -gt 100000) { return } }
+              catch { Write-Host "attempt $i failed: $_" }
+              Start-Sleep -Seconds (5 * $i)
+            }
+            throw "download failed: $url"
+          }
+          $ver = $null
+          for ($i = 1; $i -le 5 -and -not $ver; $i++) {
+            try { $ver = (Invoke-WebRequest -UseBasicParsing "https://exiftool.org/ver.txt").Content.Trim() } catch { Start-Sleep -Seconds (5 * $i) }
+          }
           Write-Host "ExifTool $ver"
-          Invoke-WebRequest -UseBasicParsing -UserAgent "Wget" "https://sourceforge.net/projects/exiftool/files/exiftool-${ver}_64.zip/download" -OutFile et.zip
+          Fetch "https://sourceforge.net/projects/exiftool/files/exiftool-${ver}_64.zip/download" et.zip
           Expand-Archive et.zip et -Force
           $inner = Get-ChildItem et -Directory | Select-Object -First 1
           $dest = "dist/CameraCheck/tools/exiftool"
@@ -54,7 +65,7 @@ jobs:
           Rename-Item (Join-Path $dest "exiftool(-k).exe") "exiftool.exe"
           & "$dest/exiftool.exe" -ver
           # sample camera files from the ExifTool test suite, for the smoke test only
-          Invoke-WebRequest -UseBasicParsing -UserAgent "Wget" "https://sourceforge.net/projects/exiftool/files/Image-ExifTool-$ver.tar.gz/download" -OutFile et.tgz
+          Fetch "https://sourceforge.net/projects/exiftool/files/Image-ExifTool-$ver.tar.gz/download" et.tgz
           tar -xzf et.tgz
           Move-Item "Image-ExifTool-$ver/t/images" samples
 
