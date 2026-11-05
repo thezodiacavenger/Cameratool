@@ -612,6 +612,12 @@ def main(argv=None):
         open_window(f"http://127.0.0.1:{preferred}/")
         return
     STORE = Store()
+    try:  # native crashes (e.g. in a USB driver) dump every thread's stack to camcheck.log
+        import faulthandler
+        main._fault_log = open(os.path.join(STORE.base, "camcheck.log"), "a", encoding="utf-8")
+        faulthandler.enable(file=main._fault_log, all_threads=True)
+    except Exception:  # noqa: BLE001
+        pass
     httpd = _bind(preferred)
     url = f"http://127.0.0.1:{httpd.server_address[1]}/"
     print(f"{__app_name__} {__version__} - {__publisher__}")
