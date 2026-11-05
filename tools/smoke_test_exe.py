@@ -73,10 +73,16 @@ try:
     cards = get("/api/cards")
     note(f"card detection OK - {len(cards)} volume(s): {[c['path'] for c in cards]}")
 
+    t0 = time.time()
     try:
         usb = post("/api/usb", b"{}")
     except urllib.error.HTTPError as ex:
         usb = {"http_error": ex.code, "body": ex.read().decode("utf-8", "replace")[:800]}
+    except Exception as ex:  # noqa: BLE001 - timeouts, dropped connections
+        alive = proc.poll() is None
+        out = "" if alive else proc.stdout.read().decode("utf-8", "replace")[-1500:]
+        usb = {"exception": repr(ex), "after_s": round(time.time() - t0, 1), "exe_alive": alive, "exe_output": out}
+    note(f"usb call took {round(time.time() - t0, 1)}s")
     if usb.get("ok") or "No USB camera" in (usb.get("error") or ""):
         note(f"USB WPD enumeration ran OK: {usb.get('error') or usb.get('model')}")
     else:
