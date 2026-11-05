@@ -17,6 +17,7 @@ import os
 import re
 import secrets
 import shutil
+import traceback
 import socket
 import subprocess
 import sys
@@ -43,6 +44,17 @@ SEEN_CLIENT = [False]
 
 CSP = ("default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; "
        "connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'")
+
+
+def log_error(text):
+    """Append diagnostics to camcheck.log in the data folder (the exe has no console)."""
+    try:
+        base = STORE.base if STORE else None
+        if base:
+            with open(os.path.join(base, "camcheck.log"), "a", encoding="utf-8") as fh:
+                fh.write(f"[{_dt.datetime.now().isoformat(timespec='seconds')}] {text}\n")
+    except OSError:
+        pass
 
 
 def custom_ratings_path():
@@ -369,6 +381,7 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(200, {"ok": True})
             self._send(404, {"error": "not found"})
         except Exception as ex:  # noqa: BLE001 - report to UI
+            log_error(f"GET {p}\n{traceback.format_exc()}")
             self._send(500, {"error": str(ex)})
 
     # -- POST -----------------------------------------------------------------
@@ -466,6 +479,7 @@ class Handler(BaseHTTPRequestHandler):
         except (ValueError, KeyError, re.error) as ex:
             self._send(400, {"error": str(ex)})
         except Exception as ex:  # noqa: BLE001
+            log_error(f"POST {p}\n{traceback.format_exc()}")
             self._send(500, {"error": str(ex)})
 
     def do_DELETE(self):
@@ -517,6 +531,9 @@ XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 class Server(ThreadingHTTPServer):
     daemon_threads = True
     allow_reuse_address = os.name != "nt"   # on Windows this would let two servers share a port
+
+    def handle_error(self, request, client_address):
+        log_error(f"unhandled error\n{traceback.format_exc()}")
 
 
 def _existing_instance(port):
