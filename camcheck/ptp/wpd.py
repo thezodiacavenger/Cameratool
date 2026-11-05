@@ -53,9 +53,38 @@ def _load():
     return _mods
 
 
-def _key(types, guid, pid):
+_ARG_TYPES = {}
+
+
+def _arg_struct(obj, method, index):
+    """The ctypes structure a COM method expects for argument `index`.
+
+    Windows ships two type libraries (PortableDeviceApi and PortableDeviceTypes) that both
+    declare PROPERTYKEY / PROPVARIANT, so comtypes generates two distinct Python classes.
+    An object returned by the device may use either set, so ask the interface itself."""
+    ck = (type(obj), method, index)
+    if ck in _ARG_TYPES:
+        return _ARG_TYPES[ck]
+    iface = getattr(type(obj), "_type_", None) or type(obj)
+    found = None
+    for klass in getattr(iface, "__mro__", ()):
+        for m in klass.__dict__.get("_methods_", None) or []:
+            try:
+                name, argtypes = m[1], m[2]
+            except (IndexError, TypeError):
+                continue
+            if name == method and len(argtypes) > index:
+                found = getattr(argtypes[index], "_type_", None)
+                break
+        if found is not None:
+            break
+    _ARG_TYPES[ck] = found
+    return found
+
+
+def _key(types, guid, pid, obj=None, method="SetUnsignedIntegerValue"):
     from comtypes import GUID
-    cls = getattr(types, "_tagpropertykey")
+    cls = (_arg_struct(obj, method, 0) if obj is not None else None) or getattr(types, "_tagpropertykey")
     k = cls()
     k.fmtid = GUID(guid)
     k.pid = pid
@@ -66,10 +95,16 @@ def _new(cc, comtypes, coclass, iface):
     return cc.CreateObject(coclass, clsctx=comtypes.CLSCTX_INPROC_SERVER, interface=iface)
 
 
-def _pv_u4(types, value):
-    pv = types.tag_inner_PROPVARIANT()
-    ctypes.memset(byref(pv), 0, ctypes.sizeof(pv))
-    ctypes.memmove(byref(pv), byref(ctypes.c_ushort(VT_UI4)), 2)
+def _pv_new(types, coll=None, method="Add", index=0):
+    cls = (_arg_struct(coll, method, index) if coll is not None else None) or types.tag_inner_PROPVARIANT
+    pv = cls()
+    ctypes.memset(ctypes.addressof(pv), 0, ctypes.sizeof(pv))
+    return pv
+
+
+def _pv_u4(types, value, coll=None):
+    pv = _pv_new(types, coll)
+    ctypes.memmove(ctypes.addressof(pv), byref(ctypes.c_ushort(VT_UI4)), 2)
     ctypes.memmove(ctypes.addressof(pv) + 8, byref(ctypes.c_uint32(value)), 4)
     return pv
 
@@ -124,11 +159,11 @@ class WPDTransport:
         self.comtypes, self.cc, self.api, self.types = comtypes, cc, api, types
         self.dev = _new(cc, comtypes, api.PortableDevice, api.IPortableDevice)
         client = self._values()
-        client.SetStringValue(_key(types, CLIENT, 2), "Camera Check")
-        client.SetUnsignedIntegerValue(_key(types, CLIENT, 3), 1)
-        client.SetUnsignedIntegerValue(_key(types, CLIENT, 4), 0)
-        client.SetUnsignedIntegerValue(_key(types, CLIENT, 5), 0)
-        client.SetUnsignedIntegerValue(_key(types, CLIENT, 8), 0x20000)  # SECURITY_IMPERSONATION
+        client.SetStringValue(_key(types, CLIENT, 2, client, "SetStringValue"), "Camera Check")
+        client.SetUnsignedIntegerValue(_key(types, CLIENT, 3, client, "SetUnsignedIntegerValue"), 1)
+        client.SetUnsignedIntegerValue(_key(types, CLIENT, 4, client, "SetUnsignedIntegerValue"), 0)
+        client.SetUnsignedIntegerValue(_key(types, CLIENT, 5, client, "SetUnsignedIntegerValue"), 0)
+        client.SetUnsignedIntegerValue(_key(types, CLIENT, 8, client, "SetUnsignedIntegerValue"), 0x20000)  # SECURITY_IMPERSONATION
         self.dev.Open(pnp_id, client)
 
     def close(self):
@@ -141,18 +176,18 @@ class WPDTransport:
     def _values(self):
         return _new(self.cc, self.comtypes, self.types.PortableDeviceValues, self.types.IPortableDeviceValues)
 
-    def _k(self, guid, pid):
-        return _key(self.types, guid, pid)
+    def _k(self, obj, method, guid, pid):
+        return _key(self.types, guid, pid, obj, method)
 
     def _command(self, cmd_pid, setup):
         p = self._values()
         from comtypes import GUID
-        p.SetGuidValue(self._k(COMMON, 1001), GUID(MTP_EXT))
-        p.SetUnsignedIntegerValue(self._k(COMMON, 1002), cmd_pid)
+        p.SetGuidValue(self._k(p, "SetGuidValue", COMMON, 1001), GUID(MTP_EXT))
+        p.SetUnsignedIntegerValue(self._k(p, "SetUnsignedIntegerValue", COMMON, 1002), cmd_pid)
         setup(p)
         res = self.dev.SendCommand(0, p)
         try:
-            hr = res.GetErrorValue(self._k(COMMON, 1003))
+            hr = res.GetErrorValue(self._k(res, "GetErrorValue", COMMON, 1003))
         except Exception:  # noqa: BLE001
             hr = 0
         if hr and hr & 0x80000000:
@@ -160,21 +195,21 @@ class WPDTransport:
         return res
 
     def _op_params(self, p, opcode, params):
-        p.SetUnsignedIntegerValue(self._k(MTP_EXT, P_OPCODE), opcode)
+        p.SetUnsignedIntegerValue(self._k(p, "SetUnsignedIntegerValue", MTP_EXT, P_OPCODE), opcode)
         coll = _new(self.cc, self.comtypes, self.types.PortableDevicePropVariantCollection,
                     self.types.IPortableDevicePropVariantCollection)
         for v in params:
-            coll.Add(_pv_u4(self.types, v & 0xFFFFFFFF))
-        p.SetIPortableDevicePropVariantCollectionValue(self._k(MTP_EXT, P_PARAMS), coll)
+            coll.Add(_pv_u4(self.types, v & 0xFFFFFFFF, coll))
+        p.SetIPortableDevicePropVariantCollectionValue(self._k(p, "SetIPortableDevicePropVariantCollectionValue", MTP_EXT, P_PARAMS), coll)
 
     def _response(self, res):
-        code = res.GetUnsignedIntegerValue(self._k(MTP_EXT, P_RESP_CODE))
+        code = res.GetUnsignedIntegerValue(self._k(res, "GetUnsignedIntegerValue", MTP_EXT, P_RESP_CODE))
         params = []
         try:
-            coll = res.GetIPortableDevicePropVariantCollectionValue(self._k(MTP_EXT, P_RESP_PARAMS))
+            coll = res.GetIPortableDevicePropVariantCollectionValue(self._k(res, "GetIPortableDevicePropVariantCollectionValue", MTP_EXT, P_RESP_PARAMS))
             n = coll_count(coll)
             for i in range(n):
-                pv = self.types.tag_inner_PROPVARIANT()
+                pv = _pv_new(self.types, coll, "GetAt", 1)
                 coll.GetAt(i, ctypes.pointer(pv))
                 params.append(_pv_read_u4(pv))
         except Exception:  # noqa: BLE001
@@ -188,10 +223,10 @@ class WPDTransport:
             code, rparams = self._response(res)
             return code, rparams, b""
         res = self._command(CMD_WITH_DATA_TO_READ, lambda p: self._op_params(p, opcode, params))
-        ctx = res.GetStringValue(self._k(MTP_EXT, P_CONTEXT))
-        total = res.GetUnsignedLargeIntegerValue(self._k(MTP_EXT, P_TOTAL_SIZE))
+        ctx = res.GetStringValue(self._k(res, "GetStringValue", MTP_EXT, P_CONTEXT))
+        total = res.GetUnsignedLargeIntegerValue(self._k(res, "GetUnsignedLargeIntegerValue", MTP_EXT, P_TOTAL_SIZE))
         try:
-            chunk = max(64 * 1024, min(CHUNK * 4, res.GetUnsignedIntegerValue(self._k(MTP_EXT, P_OPTIMAL_BUF))))
+            chunk = max(64 * 1024, min(CHUNK * 4, res.GetUnsignedIntegerValue(self._k(res, "GetUnsignedIntegerValue", MTP_EXT, P_OPTIMAL_BUF))))
         except Exception:  # noqa: BLE001
             chunk = CHUNK
         data = bytearray()
@@ -201,13 +236,13 @@ class WPDTransport:
                 buf = (c_ubyte * want)()
 
                 def setup(p, want=want, buf=buf):
-                    p.SetStringValue(self._k(MTP_EXT, P_CONTEXT), ctx)
-                    p.SetUnsignedIntegerValue(self._k(MTP_EXT, P_BYTES_TO_READ), want)
-                    p.SetBufferValue(self._k(MTP_EXT, P_DATA), cast(buf, POINTER(c_ubyte)), want)
+                    p.SetStringValue(self._k(p, "SetStringValue", MTP_EXT, P_CONTEXT), ctx)
+                    p.SetUnsignedIntegerValue(self._k(p, "SetUnsignedIntegerValue", MTP_EXT, P_BYTES_TO_READ), want)
+                    p.SetBufferValue(self._k(p, "SetBufferValue", MTP_EXT, P_DATA), cast(buf, POINTER(c_ubyte)), want)
 
                 r = self._command(CMD_READ_DATA, setup)
-                got = r.GetUnsignedIntegerValue(self._k(MTP_EXT, P_BYTES_READ))
-                ptr, n = r.GetBufferValue(self._k(MTP_EXT, P_DATA))
+                got = r.GetUnsignedIntegerValue(self._k(r, "GetUnsignedIntegerValue", MTP_EXT, P_BYTES_READ))
+                ptr, n = r.GetBufferValue(self._k(r, "GetBufferValue", MTP_EXT, P_DATA))
                 n = min(n, got) if got else n
                 if not n:
                     break
@@ -218,6 +253,6 @@ class WPDTransport:
                     pass
         finally:
             end = self._command(CMD_END_DATA_TRANSFER,
-                                lambda p: p.SetStringValue(self._k(MTP_EXT, P_CONTEXT), ctx))
+                                lambda p: p.SetStringValue(self._k(p, "SetStringValue", MTP_EXT, P_CONTEXT), ctx))
         code, rparams = self._response(end)
         return code, rparams, bytes(data)

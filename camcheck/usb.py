@@ -86,7 +86,8 @@ def _read_wpd(save_bytes, want_image=True):
             finally:
                 if t:
                     t.close()
-        result["error"] = "Could not talk to the connected device(s): " + "; ".join(tried)
+        result["error"] = ("No USB camera found. Connect the camera with a data cable, switch it on and set its USB "
+                           "mode to PTP / MTP / 'PC Remote' / 'Tether'. Other portable devices seen: " + "; ".join(tried))
         return result
     finally:
         pass

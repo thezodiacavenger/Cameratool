@@ -56,6 +56,39 @@ class WPDMarshalling(unittest.TestCase):
         ptr, n = v.GetBufferValue(self.k(1012))
         self.assertEqual(ctypes.string_at(ptr, n), data)
 
+    def test_cross_library_keys(self):
+        """Objects typed by the *API* library must get API-library keys (the bug a real device hit)."""
+        api_values = getattr(self.api, "IPortableDeviceValues", None)
+        if api_values is None:
+            self.skipTest("API type library does not declare IPortableDeviceValues")
+        v = self.wpd._new(self.cc, self.comtypes, self.types.PortableDeviceValues, api_values)
+        k = self.wpd._key(self.types, self.wpd.MTP_EXT, 1001, v, "SetUnsignedIntegerValue")
+        v.SetUnsignedIntegerValue(k, 7)
+        k2 = self.wpd._key(self.types, self.wpd.MTP_EXT, 1001, v, "GetUnsignedIntegerValue")
+        self.assertEqual(v.GetUnsignedIntegerValue(k2), 7)
+        k3 = self.wpd._key(self.types, self.wpd.CLIENT, 2, v, "SetStringValue")
+        v.SetStringValue(k3, "Camera Check")
+        api_coll = getattr(self.api, "IPortableDevicePropVariantCollection", None)
+        if api_coll is not None:
+            c = self.wpd._new(self.cc, self.comtypes, self.types.PortableDevicePropVariantCollection, api_coll)
+            c.Add(self.wpd._pv_u4(self.types, 42, c))
+            pv = self.wpd._pv_new(self.types, c, "GetAt", 1)
+            c.GetAt(0, ctypes.pointer(pv))
+            self.assertEqual(self.wpd._pv_read_u4(pv), 42)
+
+    def test_transport_opens_any_device(self):
+        """If the machine has any WPD device, opening it must not raise a ctypes TypeError."""
+        devs = self.wpd.list_devices()
+        if not devs:
+            self.skipTest("no WPD devices on this machine")
+        try:
+            t = self.wpd.WPDTransport(devs[0][0])
+            t.close()
+        except TypeError as ex:
+            self.fail(f"marshalling bug: {ex}")
+        except Exception:  # noqa: BLE001 - device may refuse; that's fine
+            pass
+
     def test_list_devices_runs(self):
         devs = self.wpd.list_devices()
         self.assertIsInstance(devs, list)

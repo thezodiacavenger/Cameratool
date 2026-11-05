@@ -98,7 +98,7 @@ try:
     for i in range(25):
         try:
             u = post("/api/usb", b"{}")
-            if not (u.get("ok") or "No USB camera" in (u.get("error") or "")):
+            if not (u.get("ok") or "No USB camera" in (u.get("error") or "")) or "TypeError" in str(u):
                 fail(f"USB call {i}: {u}")
         except Exception as ex:  # noqa: BLE001
             fail(f"USB call {i} crashed: {ex!r}")
@@ -111,7 +111,7 @@ try:
         usb = {"http_error": ex.code, "body": ex.read().decode("utf-8", "replace")[:800]}
     except Exception as ex:  # noqa: BLE001 - timeouts, dropped connections
         usb = {"exception": repr(ex), "after_s": round(time.time() - t0, 1), "exe_alive": proc.poll() is None}
-    if usb.get("ok") or "No USB camera" in (usb.get("error") or ""):
+    if (usb.get("ok") or "No USB camera" in (usb.get("error") or "")) and "TypeError" not in str(usb):
         note(f"USB WPD enumeration ran OK in {round(time.time() - t0, 1)}s: {usb.get('error') or usb.get('model')}")
     else:
         fail(f"USB readout errored: {usb}")
