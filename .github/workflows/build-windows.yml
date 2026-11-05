@@ -23,7 +23,7 @@ jobs:
         run: python -m pip install --upgrade pip pyinstaller comtypes
 
       - name: Unit tests
-        run: python -m unittest discover -s tests -v
+        run: python tools/ci_tests.py
 
       - name: Pre-generate Windows Portable Devices wrappers
         run: python -c "import comtypes.client as c; c.GetModule('portabledeviceapi.dll'); c.GetModule('portabledevicetypes.dll'); import comtypes.gen.PortableDeviceApiLib, comtypes.gen.PortableDeviceTypesLib; print('WPD wrappers OK')"
