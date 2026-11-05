@@ -37,6 +37,7 @@ Created by Emmet Adriaans for Vistek Ltd.
 ### Fixes and polish
 - Redesigned interface: sidebar navigation, shutter-life gauge, grade chips, tabbed reading sources, Pass/Fail/N/A checks with "All pass", and a sticky save bar with a save dialog. Light and dark themes.
 - Database schema versioning with automatic migration from 1.x.
+- The Windows exe runs without a console window (output goes to `camcheck.log` in the data folder) and has a **Quit** button.
 - Single instance: launching again just reopens the window. The app quits by itself when its window is closed, with a grace period after sleep.
 - The program now uses all-new code for its Word and Excel output, with no third-party libraries.
 

@@ -200,7 +200,7 @@ class Store:
         ok = hmac.compare_digest(want.replace("-", ""), given)
         return {"valid": ok, "record": {k: rec.get(k) for k in (
             "id", "created_at", "brand", "model", "serial", "shutter_count", "life_used_pct",
-            "grade", "runtime_hours", "status")},
+            "grade", "runtime_hours", "status", "extra")},
             "reason": None if ok else "Code does not match - the report may have been altered, or it was "
                                       "issued by a computer with a different signing key."}
 

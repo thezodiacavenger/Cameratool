@@ -33,7 +33,7 @@ jobs:
 
       - name: Build CameraCheck.exe
         run: >
-          pyinstaller --noconfirm --name CameraCheck --console
+          pyinstaller --noconfirm --name CameraCheck --windowed
           --icon build/CameraCheck.ico --version-file build/version_info.txt
           --collect-submodules comtypes
           --add-data "camcheck/web;camcheck/web"

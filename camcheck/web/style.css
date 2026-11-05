@@ -217,3 +217,5 @@ ol.sop li{margin:5px 0}
   main{padding:16px 16px 120px}.kpis{grid-template-columns:1fr 1fr}.guidegrid{grid-template-columns:1fr}.kv{grid-template-columns:120px 1fr}
 }
 @media print{.side,.savebar,.toast{display:none}.app{display:block}}
+.side-foot .quit{background:none;border:0;padding:0;color:var(--sidemuted);font:inherit;font-size:12px;text-decoration:underline;cursor:pointer}
+.side-foot .quit:hover{color:#fff}

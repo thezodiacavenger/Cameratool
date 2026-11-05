@@ -18,6 +18,9 @@ Everything runs locally on the store PC, and no customer data leaves the machine
 1. Download **CameraCheck-Windows.zip** from the latest release:
    https://github.com/thezodiacavenger/Cameratool/releases/latest
 2. Unzip it anywhere and double-click **CameraCheck.exe**. Keep the folder together.
+   It opens in its own window. To exit, click **Quit** at the bottom of the sidebar; it also closes by
+   itself about 10 minutes after its window is closed. Launching it again while it is running just
+   reopens the window.
 3. On first launch, Windows SmartScreen may say *Windows protected your PC*. Click
    **More info → Run anyway**. This warning appears because the exe is not code-signed (see below).
 

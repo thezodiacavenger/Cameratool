@@ -455,6 +455,10 @@ class Handler(BaseHTTPRequestHandler):
                 with open(path, "w", encoding="utf-8") as fh:
                     json.dump(data, fh, indent=1)
                 return self._send(200, {"ok": True})
+            if p == "/api/quit":
+                self._send(200, {"ok": True})
+                threading.Timer(0.4, os._exit, args=(0,)).start()
+                return
             if p == "/api/exiftool/recheck":
                 exiftool.reset_cache()
                 return self._send(200, status())
@@ -570,9 +574,20 @@ def _idle_watchdog(limit_s):
                 os._exit(0)
 
 
+def _redirect_output_if_windowed():
+    """The Windows exe has no console: send output to a log file in the data folder."""
+    if sys.stdout is None or sys.stderr is None:
+        from .store import data_dir
+        log = open(os.path.join(data_dir(), "camcheck.log"), "a", encoding="utf-8", buffering=1)
+        log.write(f"\n--- {_dt.datetime.now().isoformat(timespec='seconds')} ---\n")
+        sys.stdout = sys.stdout or log
+        sys.stderr = sys.stderr or log
+
+
 def main(argv=None):
     global STORE
     argv = argv if argv is not None else sys.argv[1:]
+    _redirect_output_if_windowed()
     preferred = int(os.environ.get("CAMCHECK_PORT", "8765"))
     headless = "--no-window" in argv
     if not headless and _existing_instance(preferred):
@@ -590,7 +605,7 @@ def main(argv=None):
     if not headless:
         threading.Timer(0.6, open_window, args=(url,)).start()
         threading.Thread(target=_idle_watchdog, args=(600,), daemon=True).start()
-    print("Close the app window (or this console) to quit.")
+    print("Use Quit in the app, or close its window, to exit.")
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:

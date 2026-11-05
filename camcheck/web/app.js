@@ -606,6 +606,13 @@ async function statusRefresh() {
   return s;
 }
 
+$("#quitBtn").addEventListener("click", async () => {
+  if (!confirm("Quit Camera Check? Unsaved evaluation details will be lost.")) return;
+  try { await postJSON("/api/quit", {}); } catch (e) {}
+  document.body.innerHTML = `<div class="about card narrow" style="margin-top:80px"><img src="/static/icon.svg" class="abouticon" alt=""><h1>Camera Check has closed</h1><p class="muted">You can close this window.</p></div>`;
+  setTimeout(() => window.close(), 400);
+});
+
 // ------------------------------------------------------------------ init ----
 (async function init() {
   renderChecks();
