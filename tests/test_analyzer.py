@@ -100,6 +100,19 @@ class T(unittest.TestCase):
         self.assertEqual(analyzer.find_rating("Canon EOS R6 Mark II", analyzer.load_ratings())["rated"], 300000)
         self.assertEqual(analyzer.find_rating("Canon EOS R6", analyzer.load_ratings())["rated"], 300000)
         self.assertEqual(analyzer.find_rating("Canon EOS R5 Mark II", analyzer.load_ratings())["name"], "EOS R5 Mark II")
+        # Canon writes the short form into files (e.g. a real R6 Mark II CR3 says "Canon EOS R6m2")
+        self.assertEqual(analyzer.find_rating("Canon EOS R6m2", analyzer.load_ratings())["name"], "EOS R6 Mark II")
+        self.assertEqual(analyzer.find_rating("Canon EOS R5m2", analyzer.load_ratings())["name"], "EOS R5 Mark II")
+        self.assertEqual(analyzer.find_rating("Canon EOS R6", analyzer.load_ratings())["name"], "EOS R6")
+
+    def test_canon_r6m2_file(self):
+        raw = {"SourceFile": "_HAR8472.CR3", "File:FileType": "CR3", "IFD0:Make": "Canon",
+               "IFD0:Model": "Canon EOS R6m2", "ExifIFD:DateTimeOriginal": "2026:11:05 10:00:00",
+               "Canon:SerialNumber": "123456789012", "Canon:ShutterCount": 30000}
+        r = analyzer.analyze(raw, now=NOW)
+        self.assertEqual(r["display_name"], "Canon EOS R6 Mark II")
+        self.assertEqual((r["primary"]["value"], r["rating"]["rated"], r["life_used_pct"]), (30000, 300000, 10.0))
+        self.assertTrue(r["grade"].startswith("A"))
 
 
 if __name__ == "__main__":

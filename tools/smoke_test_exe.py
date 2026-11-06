@@ -91,6 +91,29 @@ try:
         if ex.code != 403:
             fail(f"expected 403 without session, got {ex.code}")
 
+    # A 25 MB upload from a stale window (app restarted) must be answered, not reset - on
+    # Windows an unread body used to reset the connection and the UI showed "Failed to fetch".
+    import http.client
+    big = os.urandom(1024) * (25 * 1024)
+    for label, hdrs in (("stale session", {"Cookie": "cc_session=stale", "X-CC-Token": "stale"}),
+                        ("valid session", {"Cookie": f"cc_session={next(c.value for c in jar if c.name == 'cc_session')}",
+                                           "X-CC-Token": TOKEN[0]})):
+        try:
+            conn = http.client.HTTPConnection("127.0.0.1", PORT, timeout=120)
+            conn.request("POST", "/api/upload", body=big, headers=dict(hdrs, **{
+                "X-Filename": "big_test.CR3", "Content-Type": "application/octet-stream",
+                "Host": f"127.0.0.1:{PORT}"}))
+            resp = conn.getresponse()
+            payload = resp.read().decode("utf-8", "replace")
+            conn.close()
+            want = 403 if label == "stale session" else 200
+            if resp.status != want:
+                fail(f"25 MB upload ({label}): HTTP {resp.status} {payload[:200]}")
+            else:
+                note(f"25 MB upload ({label}) answered HTTP {resp.status} {payload[:80]}")
+        except Exception as ex:  # noqa: BLE001
+            fail(f"25 MB upload ({label}) got no answer: {ex!r}")
+
     cards = get("/api/cards")
     note(f"card detection OK - {len(cards)} volume(s): {[c['path'] for c in cards]}")
 

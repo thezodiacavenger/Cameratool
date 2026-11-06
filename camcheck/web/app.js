@@ -2,7 +2,7 @@
 /* Camera Check UI - vanilla JS, no external dependencies (CSP: script-src 'self'). */
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
-const TOKEN = $('meta[name="cc-token"]').content;
+let TOKEN = $('meta[name="cc-token"]').content;
 const esc = v => (v === null || v === undefined ? "" : String(v)).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const fmt = n => (n === null || n === undefined || n === "" || isNaN(n)) ? "–" : Number(n).toLocaleString();
 const icon = (id, cls = "") => `<svg class="${cls}"><use href="#i-${id}"/></svg>`;
@@ -15,16 +15,38 @@ const state = { evidence: [], manual: [], analysis: null, usb: null, guides: [],
   checks: {}, settings: null, saving: false };
 
 // ------------------------------------------------------------------ api ----
-async function api(path, opts = {}) {
+// Re-read the session from the app (it changes whenever Camera Check restarts).
+async function refreshSession() {
+  const r = await fetch("/", { cache: "no-store", credentials: "same-origin" });
+  const m = (await r.text()).match(/name="cc-token" content="([^"]+)"/);
+  if (!m) throw new Error("Could not reconnect to Camera Check.");
+  TOKEN = m[1];
+}
+async function appReachable() {
+  try { return (await fetch("/api/hello", { cache: "no-store" })).ok; } catch (e) { return false; }
+}
+// One place for every request: adds the token, recovers from an app restart, and turns
+// browser-level failures ("Failed to fetch") into something staff can act on.
+async function request(path, opts = {}, retry = true) {
   opts.headers = Object.assign({}, opts.headers || {});
   if (opts.method && opts.method !== "GET") opts.headers["X-CC-Token"] = TOKEN;
   let r;
-  try { r = await fetch(path, opts); } catch (e) { throw new Error("Camera Check stopped responding - reopen the app."); }
+  try { r = await fetch(path, opts); }
+  catch (e) {
+    if (!(await appReachable())) throw new Error("Camera Check isn't running. Reopen Camera Check, then try again - nothing you entered has been saved yet.");
+    if (retry) { await refreshSession(); return request(path, opts, false); }
+    throw new Error("The connection to Camera Check was interrupted. Please try again.");
+  }
   const ct = r.headers.get("content-type") || "";
-  const body = ct.includes("json") ? await r.json() : await r.text();
+  const body = ct.includes("json") ? await r.json().catch(() => ({})) : await r.text();
+  if (r.status === 403 && body && body.code === "session" && retry) {
+    await refreshSession();
+    return request(path, opts, false);
+  }
   if (!r.ok) throw new Error((body && body.error) || body || r.statusText);
   return body;
 }
+const api = (path, opts = {}) => request(path, opts);
 const postJSON = (p, data) => api(p, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data || {}) });
 
 function toast(msg, ms = 2400, kind = "") {
@@ -79,10 +101,9 @@ $$(".seg").forEach(b => b.addEventListener("click", () => {
 
 // -------------------------------------------------------------- uploads ----
 async function upload(file) {
-  const r = await fetch("/api/upload", { method: "POST", headers: { "X-Filename": encodeURIComponent(file.name), "X-CC-Token": TOKEN }, body: file });
-  const body = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(body.error || "Upload failed: " + file.name);
-  return body;
+  try {
+    return await request("/api/upload", { method: "POST", headers: { "X-Filename": encodeURIComponent(file.name) }, body: file });
+  } catch (e) { throw new Error(`${file.name}: ${e.message}`); }
 }
 function wireDrop(zone, input, handler) {
   zone.addEventListener("click", () => input.click());

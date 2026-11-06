@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.0.2
+- Fixed: adding a file could fail with only "Failed to fetch". When Camera Check had restarted or
+  closed behind an open window, the server refused the upload without reading it, and Windows dropped
+  the connection. Refused uploads are now always answered. The window reconnects to a restarted app
+  by itself and retries. If the app isn't running, it says so plainly.
+- Fixed: the app could shut itself down while its window was still open but asleep in the background.
+  It now watches the actual app window and quits only when that window is closed. The fallback idle
+  timeout is now 3 hours.
+- Fixed: Canon writes some models into files in a short form, such as "Canon EOS R6m2" and
+  "Canon EOS R5m2". These now get their rated shutter life, % used and grade.
+
 ## 2.0.1
 - Report card: estimates of more than 20 years now show as "20+ years". Other parts of a camera age long before then, so larger figures look implausible to customers.
 - Added screenshots of the report card and evaluation screen under `docs/screenshots/`.

@@ -281,6 +281,19 @@ class HTTPSecurityTests(unittest.TestCase):
             self.assertIn(ctype, r.getheader("Content-Type"), path)
         self.assertEqual(self.req("GET", "/card/..%2F..%2Fx", headers=self.cookie())[0].status, 404)
 
+    def test_refused_large_upload_still_gets_an_answer(self):
+        """A stale window (app restarted) must get a readable 'session' reply, not a dropped connection."""
+        body = b"\0" * (8 * 1024 * 1024)
+        stale = {"Cookie": "cc_session=stale", "X-CC-Token": "stale", "X-Filename": "big.CR3",
+                 "Content-Type": "application/octet-stream"}
+        r, data = self.req("POST", "/api/upload", body, stale)
+        self.assertEqual(r.status, 403)
+        self.assertEqual(json.loads(data)["code"], "session")
+        ok = dict(self.write(), **{"X-Filename": "big.CR3", "Content-Type": "application/octet-stream"})
+        r, data = self.req("POST", "/api/upload", body, ok)
+        self.assertEqual(r.status, 200, data)
+        self.assertEqual(json.loads(data)["name"], "big.CR3")
+
     def test_verify_endpoint(self):
         rec = server.STORE.get(server.STORE.list()[0]["id"])
         r, data = self.req("POST", "/api/verify", json.dumps({"id": rec["id"], "code": rec["cert_code"]}), self.write())

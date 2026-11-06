@@ -275,15 +275,32 @@ class Handler(BaseHTTPRequestHandler):
         tok = self.headers.get("X-CC-Token") or ""
         return hmac.compare_digest(tok, SESSION)
 
-    def _gate(self, path, write=False):
+    def _drain(self, n, limit=MAX_UPLOAD):
+        """Read and discard a request body we are refusing. Windows resets a connection that is
+        closed with unread data, and the browser then shows only 'Failed to fetch'."""
+        remaining = min(n, limit)
+        while remaining > 0:
+            chunk = self.rfile.read(min(1 << 20, remaining))
+            if not chunk:
+                break
+            remaining -= len(chunk)
+        if n > limit:
+            self.close_connection = True
+
+    def _gate(self, path, write=False, before_send=None):
         if not self._host_ok():
+            if before_send:
+                before_send()
             self._send(403, {"error": "forbidden"})
             return False
         public = path in ("/", "/index.html", "/api/hello", "/favicon.ico") or path.startswith("/static/")
         if public and not write:
             return True
         if not self._session_ok() or (write and not self._write_ok()):
-            self._send(403, {"error": "Session expired - close this window and reopen Camera Check."})
+            if before_send:
+                before_send()
+            self._send(403, {"error": "Session expired - close this window and reopen Camera Check.",
+                             "code": "session"})
             return False
         return True
 
@@ -394,15 +411,13 @@ class Handler(BaseHTTPRequestHandler):
         self._body = b""
         if not streaming:
             self._body = self.rfile.read(min(n, 4 * 1024 * 1024))
-        if not self._gate(p, write=True):
-            if streaming:
-                self.close_connection = True
+        if not self._gate(p, write=True, before_send=lambda: self._drain(n) if streaming else None):
             return
         self._touch()
         try:
             if p == "/api/upload":
                 if n > MAX_UPLOAD:
-                    self.close_connection = True
+                    self._drain(n)
                     return self._send(413, {"error": "File too large (limit 2 GB)."})
                 name = urllib.parse.unquote(self.headers.get("X-Filename") or "upload.bin")
                 eid, safe, _ = STORE.save_upload(name, self.rfile, n)
@@ -571,16 +586,36 @@ def open_window(url):
     for c in cands:
         if c and os.path.isfile(c):
             try:
-                subprocess.Popen([c, f"--app={url}", f"--user-data-dir={profile}", "--window-size=1380,920",
-                                  "--no-first-run", "--no-default-browser-check"])
-                return
+                return subprocess.Popen([c, f"--app={url}", f"--user-data-dir={profile}", "--window-size=1380,920",
+                                         "--no-first-run", "--no-default-browser-check"])
             except OSError:
                 continue
     webbrowser.open(url)
+    return None
+
+
+def _window_watcher(url):
+    """Quit when the user closes the app window.
+
+    The window runs in its own browser profile, so the process we start *is* the window.
+    If it exits within a few seconds it only handed the URL to an already-open instance
+    (e.g. the window was reopened); then we rely on the long idle fallback instead."""
+    proc = open_window(url)
+    if proc is None:
+        return
+    started = time.time()
+    proc.wait()
+    if time.time() - started < 10:
+        return
+    time.sleep(20)  # another window (or a reload) may still be talking to us
+    if time.time() - LAST_SEEN[0] > 20:
+        print("App window closed - shutting down.")
+        os._exit(0)
 
 
 def _idle_watchdog(limit_s):
-    """Quit when the app window has been closed (no requests for a while)."""
+    """Fallback for windows we cannot watch (default browser): quit after a long silence.
+    Kept long because a sleeping/minimised window can stop pinging for a while."""
     while True:
         time.sleep(30)
         if SEEN_CLIENT[0] and time.time() - LAST_SEEN[0] > limit_s:
@@ -626,8 +661,8 @@ def main(argv=None):
     cmd, ver = exiftool.find_exiftool()
     print(f"ExifTool: {ver or 'NOT FOUND - see README'}")
     if not headless:
-        threading.Timer(0.6, open_window, args=(url,)).start()
-        threading.Thread(target=_idle_watchdog, args=(600,), daemon=True).start()
+        threading.Thread(target=lambda: (time.sleep(0.6), _window_watcher(url)), daemon=True).start()
+        threading.Thread(target=_idle_watchdog, args=(3 * 3600,), daemon=True).start()
     print("Use Quit in the app, or close its window, to exit.")
     try:
         httpd.serve_forever()
